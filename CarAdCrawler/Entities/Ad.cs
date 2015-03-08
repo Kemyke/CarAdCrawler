@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CarAdCrawler.Entities
 {
-    public class AdEntity
+    public class Ad
     {
         [Key]
         public int Id { get; set; }
@@ -17,7 +17,7 @@ namespace CarAdCrawler.Entities
         public DateTime CreateDate { get; set; }
         public DateTime? DeleteDate { get; set; }
 
-        public MakeEntity Make { get; set; }
-        public ModelEntity Model { get; set; }
+        public Make Make { get; set; }
+        public Model Model { get; set; }
     }
 }

@@ -70,16 +70,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Entities\AdEntity.cs" />
-    <Compile Include="Entities\AdHistoryEntity.cs" />
+    <Compile Include="Common\EnumFiller.cs" />
+    <Compile Include="Entities\Ad.cs" />
+    <Compile Include="Entities\AdHistory.cs" />
     <Compile Include="Entities\CarAdsContext.cs" />
-    <Compile Include="Entities\FeatureEntity.cs" />
+    <Compile Include="Entities\Category.cs" />
+    <Compile Include="Entities\Feature.cs" />
     <Compile Include="Entities\Fuel.cs" />
     <Compile Include="Entities\GearBox.cs" />
-    <Compile Include="Entities\ModelEntity.cs" />
+    <Compile Include="Entities\Model.cs" />
     <Compile Include="Entities\SellerType.cs" />
-    <Compile Include="MobileDeCarAdCrawler.cs" />
-    <Compile Include="Entities\MakeEntity.cs" />
+    <Compile Include="Entities\State.cs" />
+    <Compile Include="MobileDe\MobileDeAdDecisionMaker.cs" />
+    <Compile Include="MobileDe\MobileDeCarAdCrawler.cs" />
+    <Compile Include="Entities\Make.cs" />
+    <Compile Include="MobileDe\MobileDeEnumSelector.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

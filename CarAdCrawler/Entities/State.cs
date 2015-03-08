@@ -7,10 +7,12 @@ using System.Threading.Tasks;
 
 namespace CarAdCrawler.Entities
 {
-    public class FeatureEntity
+    public class State
     {
         [Key]
         public int Id { get; set; }
         public string Name { get; set; }
+
+        public virtual ICollection<AdHistory> Ads { get; set; }
     }
 }

@@ -16,10 +16,17 @@ namespace CarAdCrawler.Entities
 
         }
 
-        public DbSet<MakeEntity> Makes { get; set; }
-        public DbSet<ModelEntity> Models { get; set; }
-        public DbSet<AdEntity> Ads { get; set; }
-        public DbSet<AdHistoryEntity> AdHistory { get; set; }
+        public DbSet<Make> Makes { get; set; }
+        public DbSet<Model> Models { get; set; }
+        public DbSet<Ad> Ads { get; set; }
+        public DbSet<AdHistory> AdHistory { get; set; }
+
+        public DbSet<Category> Categories { get; set; }
+        public DbSet<Fuel> Fuels { get; set; }
+        public DbSet<Feature> Features { get; set; }
+        public DbSet<GearBox> GearBoxes { get; set; }
+        public DbSet<SellerType> SellerTypes { get; set; }
+        public DbSet<State> States { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {

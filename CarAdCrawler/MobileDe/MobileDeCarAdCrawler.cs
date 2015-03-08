@@ -15,72 +15,18 @@ using CarAdCrawler.Entities;
 using System.Linq.Expressions;
 using log4net;
 
-namespace CarAdCrawler
+namespace CarAdCrawler.MobileDe
 {
     public class MobileDeCarAdCrawler
     {
-        private class AdDecisionMaker : ICrawlDecisionMaker
-        {
-            private MakeEntity make;
-            private ModelEntity model;
-
-            public AdDecisionMaker(MakeEntity me, ModelEntity moe)
-            { 
-                make = me; model = moe; 
-            }
-
-            public CrawlDecision ShouldCrawlPage(PageToCrawl pageToCrawl, CrawlContext crawlContext)
-            {
-                CrawlDecision ret;
-                bool isAd = pageToCrawl.Uri.ToString().ToLower().Contains("auto-inserat");
-                bool isList = pageToCrawl.Uri.ToString().ToLower().Contains(string.Format("{0}-{1}.html", make.Name.ToLower(), model.Name.ToLower())) && pageToCrawl.Uri.ToString().ToLower().Contains("pagenumber");
-                if (isList || crawlContext.CrawledCount == 0)
-                {
-                    ret = new CrawlDecision() { Allow = true };
-                }
-                else if (isAd)
-                {
-                    using (var ctx = new CarAdsContext())
-                    {
-                        string id = pageToCrawl.Uri.Segments[3].Replace(".html", string.Empty);
-                        bool isKnown = false; // ctx.Ads.Where(a => a.AdId == id).Any();
-                        bool allow = isAd && !isKnown;
-                        ret = new CrawlDecision() { Allow = allow, Reason = allow ? null : "isKnown" };
-                    }
-                }
-                else
-                {
-                    ret = new CrawlDecision() { Allow = false, Reason = "Not ad, not list" };
-                }
-
-                return ret;
-            }
-
-            public CrawlDecision ShouldCrawlPageLinks(CrawledPage crawledPage, CrawlContext crawlContext)
-            {
-                bool isAd = crawledPage.Uri.ToString().Contains("auto-inserat");
-                return new CrawlDecision() { Allow = !isAd, Reason = !isAd ? null : "IsAd" };
-            }
-
-            public CrawlDecision ShouldDownloadPageContent(CrawledPage crawledPage, CrawlContext crawlContext)
-            {
-                return new CrawlDecision() { Allow = true };
-            }
-
-            public CrawlDecision ShouldRecrawlPage(CrawledPage crawledPage, CrawlContext crawlContext)
-            {
-                return new CrawlDecision() { Allow = false };
-            }
-        }
-
         public MobileDeCarAdCrawler()
         {
             CreateLogger();
         }
 
-        public IEnumerable<MakeEntity> LoadMakes()
+        public IEnumerable<Make> LoadMakes()
         {
-            List<MakeEntity> makes = new List<MakeEntity>();
+            List<Make> makes = new List<Make>();
             HtmlNode.ElementsFlags.Remove("option");
             HtmlDocument m = new HtmlDocument();
             using (var wc = new System.Net.WebClient() { Encoding = Encoding.UTF8 })
@@ -101,7 +47,7 @@ namespace CarAdCrawler
                             string makeName = make.InnerText.Trim();
                             if (!string.IsNullOrEmpty(makeName))
                             {
-                                makes.Add(new MakeEntity() { MakeId = makeId, Name = makeName, CreateDate = DateTime.Now, Models = new List<ModelEntity>() });
+                                makes.Add(new Make() { MakeId = makeId, Name = makeName, CreateDate = DateTime.Now, Models = new List<Model>() });
                             }
                         }
                     }
@@ -113,7 +59,7 @@ namespace CarAdCrawler
             return makes;
         }
 
-        public void LoadModels(IEnumerable<MakeEntity> makes)
+        public void LoadModels(IEnumerable<Make> makes)
         {
             using (var wc = new System.Net.WebClient() { Encoding = Encoding.UTF8 })
             {
@@ -134,7 +80,7 @@ namespace CarAdCrawler
                                 string modelName = model.InnerText.Replace("&nbsp;", "").Trim();
                                 if (!string.IsNullOrEmpty(modelName))
                                 {
-                                    make.Models.Add(new ModelEntity() { ModelId = modelId, Name = modelName, ParentId = make.Id, CreateDate = DateTime.Now, Parent = make });
+                                    make.Models.Add(new Model() { ModelId = modelId, Name = modelName, ParentId = make.Id, CreateDate = DateTime.Now, Parent = make });
                                 }
                             }
                         }
@@ -145,7 +91,7 @@ namespace CarAdCrawler
             logger.DebugFormat("Models loaded!");
         }
 
-        public void SaveMakesAndModels(IEnumerable<MakeEntity> makes)
+        public void SaveMakesAndModels(IEnumerable<Make> makes)
         {
             using (var ctx = new CarAdsContext())
             {
@@ -218,7 +164,7 @@ namespace CarAdCrawler
             Crawl(m => true, m => true);
         }
 
-        public void Crawl(Expression<Func<MakeEntity, bool>> makeFilter, Expression<Func<ModelEntity, bool>> modelFilter)
+        public void Crawl(Expression<Func<Make, bool>> makeFilter, Expression<Func<Model, bool>> modelFilter)
         {
             using (var ctx = new CarAdsContext())
             {
@@ -226,7 +172,7 @@ namespace CarAdCrawler
                 {
                     foreach (var model in ctx.Models.Where(m => m.ParentId == make.Id).Where(modelFilter))
                     {
-                        PoliteWebCrawler crawler = new PoliteWebCrawler(null, new AdDecisionMaker(make, model), null, null, null, null, null, null, null);
+                        PoliteWebCrawler crawler = new PoliteWebCrawler(null, new MobileDeAdDecisionMaker(make, model), null, null, null, null, null, null, null);
                         crawler.CrawlBag = new { make, model };
                         crawler.PageCrawlCompletedAsync += crawler_ProcessPageCrawlCompleted;
 
@@ -246,9 +192,9 @@ namespace CarAdCrawler
             }
         }
 
-        private AdEntity CreateAd(string id, MakeEntity make, ModelEntity model)
+        private Ad CreateAd(string id, Make make, Model model)
         {
-            AdEntity ad = new AdEntity();
+            Ad ad = new Ad();
             ad.CreateDate = DateTime.Now;
             ad.AdId = id;
             ad.MakeId = make.Id;
@@ -256,36 +202,143 @@ namespace CarAdCrawler
             return ad;
         }
 
-        private AdHistoryEntity GetAdData(int adId, HtmlNode page)
+        private int GetPrice(HtmlNode page)
         {
             var pn = page.Descendants("p").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("pricePrimaryCountryOfSale priceGross")).FirstOrDefault();
-            AdHistoryEntity he = new AdHistoryEntity();
             int currPrice = int.Parse(pn.InnerText.Substring(0, pn.InnerText.IndexOf(" ")).Replace(".", ""));
-            he.Date = DateTime.Now;
-            he.AdId = adId;
-            he.Price = currPrice;
+            return currPrice;
+        }
 
+        private List<HtmlNode> GetDetails(HtmlNode page)
+        {
             var mainTechData = page.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("mainTechnicalData")).FirstOrDefault();
-
             var dd = mainTechData.Descendants().SkipWhile(hn => hn.Name != "br").ToList();
             var details = dd.Where(hn => hn.Name == "p").ToList();
-            DateTime firstReg;
-            DateTime.TryParse(details[0].InnerText.Trim().Replace("EZ ", ""), out firstReg);
+            return details;
+        }
+
+        private int? GetKm(List<HtmlNode> details)
+        {
             int km;
-            int.TryParse(details[1].InnerText.Trim().Replace("&nbsp;km", "").Replace(".", ""), out km);
+            if(int.TryParse(details[1].InnerText.Trim().Replace("&nbsp;km", "").Replace(".", ""), out km))
+            {
+                return km;
+            }
+            return null;
+        }
+
+        private DateTime? GetFirstReg(List<HtmlNode> details)
+        {
+            DateTime firstReg;
+            if(DateTime.TryParse(details[0].InnerText.Trim().Replace("EZ ", ""), out firstReg))
+            {
+                return firstReg;
+            }
+            return null;
+        }
+
+        private string GetTitle(HtmlNode page)
+        {
             var sn = page.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("titleContainer")).FirstOrDefault();
             var title = sn.ChildNodes[1].InnerText.Trim();
+            return title;
+        }
 
-            he.Km = km;
-            he.FirstReg = firstReg;
-            he.Title = title;
+        private string GetDescription(HtmlNode page)
+        {
+            var sn = page.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("ad-description")).FirstOrDefault();
+            if (sn != null)
+            {
+                string desc = sn.InnerText.Replace("&nbsp;", " ").Trim();
+                return desc;
+            }
+            return null;
+        }
+
+        private List<string> GetCategoryAndStateStrings(HtmlNode page)
+        {
+            List<string> ret;
+            var mainTechData = page.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("mainTechnicalData")).FirstOrDefault();
+            var s = mainTechData.Descendants("strong").FirstOrDefault();
+            if(s != null)
+            {
+                string text = s.InnerText.Trim();
+                ret = text.Split(',').Select(s2 => s2.Trim()).ToList();
+            }
+            else
+            {
+                logger.ErrorFormat("Strong not found! MainTechData: {0}.", mainTechData.InnerHtml);
+                ret = new List<string>();
+            }
+            return ret;
+        }
+
+        private MobileDeEnumSelector enumSelector = new MobileDeEnumSelector();
+        private Category GetCategory(CarAdsContext ctx, List<string> cands)
+        {
+            Category ret = null;
+            var categories = cands.Select(s => enumSelector.ParseCategory(ctx, s)).Where(s => s != null);
+            if(categories.Any())
+            {
+                if(categories.Count() > 1)
+                {
+                    logger.WarnFormat("Multiple categories found: {0}.", string.Join(",", cands));
+                }
+                ret = categories.First();
+            }
+            else
+            {
+                logger.ErrorFormat("No categories found: {0}.", string.Join(",", cands));
+            }
+            return ret;
+        }
+
+        private List<State> GetStates(CarAdsContext ctx, List<string> cands)
+        {
+            List<State> ret = new List<State>();
+            var states = cands.Select(s => enumSelector.ParseState(ctx, s)).Where(s => s != null);
+            if (states.Any())
+            {
+                ret.AddRange(states);
+            }
+            else
+            {
+                logger.ErrorFormat("No states found: {0}.", string.Join(",", cands));
+            }
+            return ret;
+        }
+
+        private AdHistory GetAdData(CarAdsContext ctx, int adId, HtmlNode page)
+        {
+            AdHistory he = new AdHistory();
+            he.Date = DateTime.Now;
+            he.AdId = adId;
+            he.Price = GetPrice(page);
+
+            var details = GetDetails(page);
+            var cands = GetCategoryAndStateStrings(page);
+
+            he.Km = GetKm(details);
+            he.FirstReg = GetFirstReg(details);
+            he.Title = GetTitle(page);
+
+            var c = GetCategory(ctx, cands);
+            he.Category = c;
+            he.CategoryId = c != null ? (int?)c.Id : null;
+            he.States = GetStates(ctx, cands);
+            he.Address = null;
+            he.Fuel = null;
+            he.GearBox = null;
+            he.SellerType = null;
+            he.Features = null;
+            he.Description = GetDescription(page);
 
             return he;
         }
 
-        private AdHistoryEntity GetChangedData(int adId, AdHistoryEntity lastHistory, AdHistoryEntity currentData)
+        private AdHistory GetChangedData(int adId, AdHistory lastHistory, AdHistory currentData)
         {
-            AdHistoryEntity changedData = new AdHistoryEntity();
+            AdHistory changedData = new AdHistory();
             bool isChanged = false;
             changedData.Date = DateTime.Now;
             changedData.AdId = adId;
@@ -342,17 +395,17 @@ namespace CarAdCrawler
                     string id = e.CrawledPage.Uri.Segments[3].Replace(".html", string.Empty);
                     using (var ctx = new CarAdsContext())
                     {
-                        AdEntity ad = ctx.Ads.Where(a => a.AdId == id).SingleOrDefault();
+                        Ad ad = ctx.Ads.Where(a => a.AdId == id).SingleOrDefault();
                         if (ad == null)
                         {
                             ad = CreateAd(id, ((WebCrawler)sender).CrawlBag.make, ((WebCrawler)sender).CrawlBag.model);
                             ctx.Ads.Add(ad);
                         }
 
-                        AdHistoryEntity lastHistory = ctx.AdHistory.Where(ah => ah.AdId == ad.Id).OrderByDescending(ah => ah.Date).FirstOrDefault();
-                        AdHistoryEntity currentData = GetAdData(ad.Id, e.CrawledPage.HtmlDocument.DocumentNode);
+                        AdHistory lastHistory = ctx.AdHistory.Where(ah => ah.AdId == ad.Id).OrderByDescending(ah => ah.Date).FirstOrDefault();
+                        AdHistory currentData = GetAdData(ctx, ad.Id, e.CrawledPage.HtmlDocument.DocumentNode);
 
-                        AdHistoryEntity changedData = null;
+                        AdHistory changedData = null;
 
                         if(lastHistory == null)
                         {
@@ -374,5 +427,8 @@ namespace CarAdCrawler
                 }
             }
         }
+
+
+        
     }
 }
