@@ -13,7 +13,7 @@ namespace CarAdCrawler.Entities
         public CarAdsContext()
             : base()
         {
-
+            Database.SetInitializer<CarAdsContext>(new CarAdsInitializer());
         }
 
         public DbSet<Make> Makes { get; set; }
@@ -21,12 +21,8 @@ namespace CarAdCrawler.Entities
         public DbSet<Ad> Ads { get; set; }
         public DbSet<AdHistory> AdHistory { get; set; }
 
-        public DbSet<Category> Categories { get; set; }
-        public DbSet<Fuel> Fuels { get; set; }
         public DbSet<Feature> Features { get; set; }
         public DbSet<GearBox> GearBoxes { get; set; }
-        public DbSet<SellerType> SellerTypes { get; set; }
-        public DbSet<State> States { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {

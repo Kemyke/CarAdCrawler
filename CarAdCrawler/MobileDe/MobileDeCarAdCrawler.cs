@@ -220,7 +220,9 @@ namespace CarAdCrawler.MobileDe
         private int? GetKm(List<HtmlNode> details)
         {
             int km;
-            if(int.TryParse(details[1].InnerText.Trim().Replace("&nbsp;km", "").Replace(".", ""), out km))
+            var node = details.Where(h => h.InnerText.EndsWith("km")).FirstOrDefault();
+
+            if(node != null && int.TryParse(node.InnerText.Trim().Replace("&nbsp;km", "").Replace(".", ""), out km))
             {
                 return km;
             }
@@ -230,11 +232,19 @@ namespace CarAdCrawler.MobileDe
         private DateTime? GetFirstReg(List<HtmlNode> details)
         {
             DateTime firstReg;
-            if(DateTime.TryParse(details[0].InnerText.Trim().Replace("EZ ", ""), out firstReg))
+            var node = details.Where(h => h.InnerText.StartsWith("EZ")).FirstOrDefault();
+
+            if(node != null && DateTime.TryParse(node.InnerText.Trim().Replace("EZ ", ""), out firstReg))
             {
                 return firstReg;
             }
             return null;
+        }
+
+        private Fuel? GetFuelType(List<HtmlNode> details)
+        {
+            var f = details.Select(h => enumSelector.ParseFuel(h.InnerText.Trim())).FirstOrDefault(s => s != null);
+            return f;
         }
 
         private string GetTitle(HtmlNode page)
@@ -274,10 +284,10 @@ namespace CarAdCrawler.MobileDe
         }
 
         private MobileDeEnumSelector enumSelector = new MobileDeEnumSelector();
-        private Category GetCategory(CarAdsContext ctx, List<string> cands)
+        private Category? GetCategory(List<string> cands)
         {
-            Category ret = null;
-            var categories = cands.Select(s => enumSelector.ParseCategory(ctx, s)).Where(s => s != null);
+            Category? ret = null;
+            var categories = cands.Select(s => enumSelector.ParseCategory(s)).Where(s => s != null);
             if(categories.Any())
             {
                 if(categories.Count() > 1)
@@ -293,10 +303,10 @@ namespace CarAdCrawler.MobileDe
             return ret;
         }
 
-        private List<State> GetStates(CarAdsContext ctx, List<string> cands)
+        private List<AdHistoryState> GetStates(AdHistory adHistory, List<string> cands)
         {
-            List<State> ret = new List<State>();
-            var states = cands.Select(s => enumSelector.ParseState(ctx, s)).Where(s => s != null);
+            List<AdHistoryState> ret = new List<AdHistoryState>();
+            var states = cands.Select(s => enumSelector.ParseState(s)).Where(s => s != null).Select(s => new AdHistoryState() { AdHistory = adHistory, State = s.Value });
             if (states.Any())
             {
                 ret.AddRange(states);
@@ -304,6 +314,31 @@ namespace CarAdCrawler.MobileDe
             else
             {
                 logger.ErrorFormat("No states found: {0}.", string.Join(",", cands));
+            }
+            return ret;
+        }
+
+        private SellerType? GetSellerType(CarAdsContext ctx, HtmlNode page)
+        {
+            var sellerData = page.Descendants("p").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("commercialStatus")).FirstOrDefault();
+            var nameNode = sellerData.Descendants("a").FirstOrDefault();
+            if(nameNode != null)
+            {
+                var name = nameNode.InnerText.Trim();
+                SellerType? ret = enumSelector.ParseSellerType(name);
+                return ret;
+            }
+
+            return null;
+        }
+
+        private string GetAddress(HtmlNode page)
+        {
+            var address = page.Descendants("p").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("address")).FirstOrDefault();
+            string ret = null;
+            if(address != null)
+            {
+                ret = address.InnerText.Trim().Replace("&nbsp;", " ");
             }
             return ret;
         }
@@ -322,14 +357,13 @@ namespace CarAdCrawler.MobileDe
             he.FirstReg = GetFirstReg(details);
             he.Title = GetTitle(page);
 
-            var c = GetCategory(ctx, cands);
+            var c = GetCategory(cands);
             he.Category = c;
-            he.CategoryId = c != null ? (int?)c.Id : null;
-            he.States = GetStates(ctx, cands);
-            he.Address = null;
-            he.Fuel = null;
+            he.States = GetStates(he, cands);
+            he.Address = GetAddress(page);
+            he.Fuel = GetFuelType(details);
             he.GearBox = null;
-            he.SellerType = null;
+            he.SellerType = GetSellerType(ctx, page);
             he.Features = null;
             he.Description = GetDescription(page);
 

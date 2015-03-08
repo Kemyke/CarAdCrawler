@@ -7,10 +7,17 @@ using System.Threading.Tasks;
 
 namespace CarAdCrawler.Entities
 {
-    public class Fuel
+    public enum Fuel
     {
-        [Key]
-        public int Id { get; set; }
-        public string Name { get; set; }
+        Benzin,
+        Diesel,
+        Elektro,
+        Ethanol,
+        Autogas,
+        Erdgas,
+        HybridBenzin,
+        HybridDiesel,
+        Wasserftoff,
+        Andere,
     }
 }

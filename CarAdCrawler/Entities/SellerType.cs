@@ -7,10 +7,9 @@ using System.Threading.Tasks;
 
 namespace CarAdCrawler.Entities
 {
-    public class SellerType
+    public enum SellerType
     {
-        [Key]
-        public int Id { get; set; }
-        public string Name { get; set; }
+        Privatanbieter = 0,
+        Handler = 1,
     }
 }

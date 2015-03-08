@@ -7,10 +7,15 @@ using System.Threading.Tasks;
 
 namespace CarAdCrawler.Entities
 {
-    public class Category
+    public enum Category
     {
-        [Key]
-        public int Id { get; set; }
-        public string Name { get; set; }
+        CabrioRoadster = 0,
+        SportwagenCoupe,
+        GeländewagenPickup,
+        Kleinwagen,
+        Kombi,
+        Limousine,
+        VanKleinbus,
+        Andere,
     }
 }

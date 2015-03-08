@@ -9,18 +9,75 @@ namespace CarAdCrawler.MobileDe
 {
     public class MobileDeEnumSelector
     {
-        public Category ParseCategory(CarAdsContext ctx, string categoryString)
+        public Category? ParseCategory(string categoryString)
         {
-            Category ret;
-            ret = ctx.Categories.Where(c => c.Name == categoryString).SingleOrDefault();
-            return ret;
+            if (categoryString == "Cabrio/Roadster")
+                return Category.CabrioRoadster;
+            if (categoryString == "Sportwagen/Coupé")
+                return Category.SportwagenCoupe;
+            if (categoryString == "Geländewagen/Pickup")
+                return Category.GeländewagenPickup;
+            if (categoryString == "Kleinwagen")
+                return Category.Kleinwagen;
+            if (categoryString == "Kombi")
+                return Category.Kombi;
+            if (categoryString == "Limousine")
+                return Category.Limousine;
+            if (categoryString == "Van/Kleinbus")
+                return Category.VanKleinbus;
+            if (categoryString == "Andere")
+                return Category.Andere;
+
+            return null;
         }
 
-        public State ParseState(CarAdsContext ctx, string state)
+        public State? ParseState(string state)
         {
-            State ret;
-            ret = ctx.States.Where(c => c.Name == state).SingleOrDefault();
-            return ret;
+            if (state == "Unfallfrei")
+                return State.Unfallfrei;
+            if (state == "Nicht fahrtauglich")
+                return State.NichtFahrtauglich;
+            if (state == "Gebrauchtfahrzeug")
+                return State.Gebrauchtfahrzeug;
+            return null;
+        }
+
+        public SellerType? ParseSellerType(string seller)
+        {
+            if (seller == "Privatanbieter")
+            {
+                return SellerType.Privatanbieter;
+            }
+            else
+            {
+                return SellerType.Handler;
+            }
+        }
+
+        public Fuel? ParseFuel(string fuel)
+        {
+            if (fuel.StartsWith("Benzin"))
+                return Fuel.Benzin;
+            if (fuel.StartsWith("Diesel"))
+                return Fuel.Diesel;
+            if (fuel.StartsWith("Elektro"))
+                return Fuel.Elektro;
+            if (fuel.StartsWith("Ethanol"))
+                return Fuel.Ethanol;
+            if (fuel.StartsWith("Autogas"))
+                return Fuel.Autogas;
+            if (fuel.StartsWith("Erdgas"))
+                return Fuel.Erdgas;
+            if (fuel == "Hybrid (Benzin/Elektro)")
+                return Fuel.HybridBenzin;
+            if (fuel == "Hybrid (Diesel/Elektro)")
+                return Fuel.HybridDiesel;
+            if (fuel.StartsWith("Wasserstoff"))
+                return Fuel.Wasserftoff;
+            if (fuel.StartsWith("Andere"))
+                return Fuel.Andere;
+
+            return null;
         }
     }
 }

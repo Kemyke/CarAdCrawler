@@ -13,7 +13,7 @@ using System.Web;
 using System.Data.Entity;
 using CarAdCrawler.Entities;
 using CarAdCrawler.MobileDe;
-using CarAdCrawler.Common;
+
 [assembly: log4net.Config.XmlConfigurator(Watch = true)]
 namespace CarAdCrawler
 {
@@ -21,9 +21,6 @@ namespace CarAdCrawler
     {
         static void Main(string[] args)
         {
-            EnumFiller ef = new EnumFiller();
-            ef.FillEnumData();
-
             MobileDeCarAdCrawler mobileCrawler = new MobileDeCarAdCrawler();
 
             var makes = mobileCrawler.LoadMakes();
