@@ -39,6 +39,7 @@ namespace CarAdCrawler.Entities
         public ExteriorColors? ExteriorColor { get; set; }
         public InteriorDesigns? InteriorDesign { get; set; }
         public InteriorColors? InteriorColor { get; set; }
+        public VATRate? VatRate { get; set; }
 
         public virtual ICollection<AdHistoryFeature> Features { get; set; }
         public virtual ICollection<AdHistoryState> States { get; set; }

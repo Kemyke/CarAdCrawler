@@ -239,7 +239,7 @@ namespace CarAdCrawler.MobileDe
             if (node != null)
             {
                 var kwps = node.InnerText.Trim().Replace("PS)", "");
-                kwps = kwps.Substring(kwps.IndexOf('('));
+                kwps = kwps.Substring(kwps.IndexOf('(') + 1);
 
                 if(int.TryParse(kwps, out ps))
                 {
@@ -287,6 +287,17 @@ namespace CarAdCrawler.MobileDe
             {
                 string desc = sn.InnerText.Replace("&nbsp;", " ").Trim();
                 return desc;
+            }
+            return null;
+        }
+
+        private VATRate? GetVATRate(HtmlNode page)
+        {
+            var sn = page.Descendants("p").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("vatRate")).FirstOrDefault();
+            if (sn != null)
+            {
+                VATRate? vr = enumSelector.ParseVatRate(sn.InnerText.Trim());
+                return vr;
             }
             return null;
         }
@@ -512,7 +523,7 @@ namespace CarAdCrawler.MobileDe
             he.ExteriorColor = enumSelector.GetExteriorColor(technical);
             he.InteriorColor = enumSelector.GetInteriorColor(technical);
             he.InteriorDesign = enumSelector.GetInteriorDesign(technical);
-
+            he.VatRate = GetVATRate(page);
             return he;
         }
 

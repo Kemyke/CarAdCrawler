@@ -857,5 +857,20 @@ namespace CarAdCrawler.MobileDe
             logger.DebugFormat("Cant find interior design: {0}.", string.Join(",", data.Keys));
             return null;
         }
+
+        public VATRate? ParseVatRate(string vat)
+        {
+            if (vat == "MwSt. nicht ausweisbar")
+            {
+                return VATRate.MwStNichtAusweisbar;
+            }
+            else if (vat.EndsWith("MwSt."))
+            {
+                return VATRate.MwStAusweisbar;
+            }
+
+            logger.WarnFormat("Cant find VAT: {0}.", vat);
+            return null;
+        }
     }
 }
