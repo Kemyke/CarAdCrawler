@@ -530,31 +530,9 @@ namespace CarAdCrawler.MobileDe
         private AdHistory GetChangedData(int adId, AdHistory lastHistory, AdHistory currentData)
         {
             AdHistory changedData = new AdHistory();
-            bool isChanged = false;
+            bool isChanged = new Comparer().Diff<AdHistory>(lastHistory, currentData, out changedData);
             changedData.Date = DateTime.Now;
             changedData.AdId = adId;
-            
-            if (lastHistory.Price != currentData.Price)
-            {
-                changedData.Price = currentData.Price;
-                isChanged = true;
-            }
-
-            if (lastHistory.FirstReg != currentData.FirstReg)
-            {
-                changedData.FirstReg = currentData.FirstReg;
-                isChanged = true;
-            }
-            if (lastHistory.Km != currentData.Km)
-            {
-                changedData.Km = currentData.Km;
-                isChanged = true;
-            }
-            if (lastHistory.Title != currentData.Title)
-            {
-                changedData.Title = currentData.Title;
-                isChanged = true;
-            }
 
             if(!isChanged)
             {
