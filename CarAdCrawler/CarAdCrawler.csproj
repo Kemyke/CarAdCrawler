@@ -92,7 +92,9 @@
     <Compile Include="Entities\Model.cs" />
     <Compile Include="Entities\SellerType.cs" />
     <Compile Include="Entities\State.cs" />
-    <Compile Include="MobileDe\MobileDeAdDecisionMaker.cs" />
+    <Compile Include="MobileDe\MobileDeAdDecisionMaker.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="MobileDe\MobileDeCarAdCrawler.cs" />
     <Compile Include="Entities\Make.cs" />
     <Compile Include="MobileDe\MobileDeEnumSelector.cs" />
