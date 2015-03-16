@@ -80,9 +80,15 @@
     <Compile Include="Entities\CarAdsContext.cs" />
     <Compile Include="Entities\CarAdsInitializer.cs" />
     <Compile Include="Entities\Category.cs" />
+    <Compile Include="Entities\Doors.cs" />
+    <Compile Include="Entities\EmissionClasses.cs" />
+    <Compile Include="Entities\EmissionStickers.cs" />
+    <Compile Include="Entities\ExteriorColors.cs" />
     <Compile Include="Entities\Feature.cs" />
     <Compile Include="Entities\Fuel.cs" />
     <Compile Include="Entities\GearBox.cs" />
+    <Compile Include="Entities\InteriorColors.cs" />
+    <Compile Include="Entities\InteriorDesigns.cs" />
     <Compile Include="Entities\Model.cs" />
     <Compile Include="Entities\SellerType.cs" />
     <Compile Include="Entities\State.cs" />

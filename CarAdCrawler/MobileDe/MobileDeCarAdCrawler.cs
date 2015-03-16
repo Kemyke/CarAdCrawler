@@ -198,6 +198,7 @@ namespace CarAdCrawler.MobileDe
             Ad ad = new Ad();
             ad.CreateDate = DateTime.Now;
             ad.AdId = id;
+            ad.URL = string.Format(@"http://suchen.mobile.de/auto-inserat/auto/{0}.html", id);
             ad.MakeId = make.Id;
             ad.ModelId = model.Id;
             return ad;
@@ -496,6 +497,21 @@ namespace CarAdCrawler.MobileDe
             he.SellerType = GetSellerType(ctx, page);
             he.Features = GetFeatures(he, features);
             he.Description = GetDescription(page);
+
+            he.CC = enumSelector.GetCC(technical);
+            he.SeatNum = enumSelector.GetSeatNum(technical);
+            he.Doors = enumSelector.GetDoors(technical);
+            he.ConsumptionCombined = enumSelector.GetCombinedConsumption(technical);
+            he.ConsumptionUrban = enumSelector.GetUrbanConsumption(technical);
+            he.ConsumptionExtraUrban = enumSelector.GetExtraUrbanConsumption(technical);
+            he.CO2Emission = enumSelector.GetCO2Emission(technical);
+            he.EmissionClass = enumSelector.GetEmissionClass(technical);
+            he.EmissionSticker = enumSelector.GetEmissionSticker(technical);
+            he.PrevOwnerCount = enumSelector.GetPrevOwnerCount(technical);
+            he.MOT = enumSelector.GetMOT(technical);
+            he.ExteriorColor = enumSelector.GetExteriorColor(technical);
+            he.InteriorColor = enumSelector.GetInteriorColor(technical);
+            he.InteriorDesign = enumSelector.GetInteriorDesign(technical);
 
             return he;
         }

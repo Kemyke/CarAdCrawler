@@ -31,8 +31,8 @@ namespace CarAdCrawler.Entities
         Tempomat,
         TunerRadio,
         Zentralverriegelung,
-        Einparkhilfe,
-        Klimatisierung,
+        KlimatisierungKlimaanlage,
+        KlimatisierungKlimaautomatik,
         ABS,
         Allradantrieb,
         ElektrWegfahrsperre,
@@ -52,5 +52,18 @@ namespace CarAdCrawler.Entities
         Taxi,
         Behindertengerecht,
         Scheckheftgepflegt,
+
+        Anhängerkupplung,
+        Dachreling,
+        Leichtmetallfelgen,
+        PanoramaDach,
+
+        AirbagsFahrerAirbag,
+        AirbagsFrontAirbags, 
+        AirbagsFrontUndSeitenAirbags,
+        AirbagsFrontSeitenUndWeitereAirbags,
+        EinparkhilfeHinten,
+        EinparkhilfeVorne,
+        EinparkhilfeHintenUndVorne,
     }
 }
