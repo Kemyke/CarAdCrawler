@@ -7,10 +7,50 @@ using System.Threading.Tasks;
 
 namespace CarAdCrawler.Entities
 {
-    public class Feature
+    public enum Feature
     {
-        [Key]
-        public int Id { get; set; }
-        public string Name { get; set; }
+        Bluetooth,
+        Bordcomputer,
+        CDSpieler,
+        ElektrFensterheber,
+        ElektrSeitenspiegel,
+        ElektrSitzeinstellung,
+        Freisprecheinrichtung,
+        HeadUpDisplay,
+        Isofix,
+        MP3Schnittstelle,
+        Multifunktionslenkrad,
+        Navigationssystem,
+        Regensensor,
+        Schiebedach,
+        Servolenkung,
+        Sitzheizung,
+        Skisack,
+        Standheizung,
+        StartStopAutomatik,
+        Tempomat,
+        TunerRadio,
+        Zentralverriegelung,
+        Einparkhilfe,
+        Klimatisierung,
+        ABS,
+        Allradantrieb,
+        ElektrWegfahrsperre,
+        ESP,
+        Kurvenlicht,
+        Lichtsensor,
+        Nebelscheinwerfer,
+        Partikelfilter,
+        Tagfahrlicht,
+        Traktionskontrolle,
+        Xenonscheinwerfer,
+        Sportfahrwerk,
+        Sportpaket,
+        Sportsitze,
+        NichtraucherFahrzeug,
+        Garantie,
+        Taxi,
+        Behindertengerecht,
+        Scheckheftgepflegt,
     }
 }

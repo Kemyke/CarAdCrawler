@@ -22,6 +22,7 @@ namespace CarAdCrawler.MobileDe
         public MobileDeCarAdCrawler()
         {
             CreateLogger();
+            enumSelector = new MobileDeEnumSelector(logger);
         }
 
         public IEnumerable<Make> LoadMakes()
@@ -220,7 +221,7 @@ namespace CarAdCrawler.MobileDe
         private int? GetKm(List<HtmlNode> details)
         {
             int km;
-            var node = details.Where(h => h.InnerText.EndsWith("km")).FirstOrDefault();
+            var node = details.Where(h => h.InnerText.Trim().EndsWith("km")).FirstOrDefault();
 
             if(node != null && int.TryParse(node.InnerText.Trim().Replace("&nbsp;km", "").Replace(".", ""), out km))
             {
@@ -229,10 +230,28 @@ namespace CarAdCrawler.MobileDe
             return null;
         }
 
+        private int? GetHP(List<HtmlNode> details)
+        {
+            int ps;
+            var node = details.Where(h => h.InnerText.Trim().EndsWith("PS)")).FirstOrDefault();
+
+            if (node != null)
+            {
+                var kwps = node.InnerText.Trim().Replace("PS)", "");
+                kwps = kwps.Substring(kwps.IndexOf('('));
+
+                if(int.TryParse(kwps, out ps))
+                {
+                    return ps;
+                }
+            }
+            return null;
+        }
+
         private DateTime? GetFirstReg(List<HtmlNode> details)
         {
             DateTime firstReg;
-            var node = details.Where(h => h.InnerText.StartsWith("EZ")).FirstOrDefault();
+            var node = details.Where(h => h.InnerText.Trim().StartsWith("EZ")).FirstOrDefault();
 
             if(node != null && DateTime.TryParse(node.InnerText.Trim().Replace("EZ ", ""), out firstReg))
             {
@@ -244,6 +263,12 @@ namespace CarAdCrawler.MobileDe
         private Fuel? GetFuelType(List<HtmlNode> details)
         {
             var f = details.Select(h => enumSelector.ParseFuel(h.InnerText.Trim())).FirstOrDefault(s => s != null);
+            return f;
+        }
+
+        private GearBox? GetGearBox(List<HtmlNode> details)
+        {
+            var f = details.Select(h => enumSelector.ParseGearBox(h.InnerText.Trim())).FirstOrDefault(s => s != null);
             return f;
         }
 
@@ -283,7 +308,7 @@ namespace CarAdCrawler.MobileDe
             return ret;
         }
 
-        private MobileDeEnumSelector enumSelector = new MobileDeEnumSelector();
+        private MobileDeEnumSelector enumSelector = null;
         private Category? GetCategory(List<string> cands)
         {
             Category? ret = null;
@@ -343,6 +368,108 @@ namespace CarAdCrawler.MobileDe
             return ret;
         }
 
+        private List<AdHistoryFeature> GetFeatures(AdHistory adHistory, List<string> cands)
+        {
+            List<AdHistoryFeature> ret = new List<AdHistoryFeature>();
+            var states = cands.Select(s => enumSelector.ParseFeature(s)).Where(s => s != null).Select(s => new AdHistoryFeature() { AdHistory = adHistory, Feature = s.Value });
+            if (states.Any())
+            {
+                ret.AddRange(states);
+            }
+            else
+            {
+                logger.ErrorFormat("No states found: {0}.", string.Join(",", cands));
+            }
+            return ret;
+        }
+
+        private List<string> GetFeatureStrings(HtmlNode page)
+        {
+            List<string> ret = new List<string>();
+            var interior = page.Descendants("ul").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("interior")).FirstOrDefault();
+            if (interior != null)
+            {
+                var dd = interior.Descendants("li").ToList();
+                ret.AddRange(dd.Select(h => h.InnerText.Trim()));
+            }
+
+            var exterior = page.Descendants("ul").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("exterior")).FirstOrDefault();
+            if (exterior != null)
+            {
+                var dd = exterior.Descendants("li").ToList();
+                ret.AddRange(dd.Select(h => h.InnerText.Trim()));
+            }
+
+            var extras = page.Descendants("ul").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("extras")).FirstOrDefault();
+            if (extras != null)
+            {
+                var dd = extras.Descendants("li").ToList();
+                ret.AddRange(dd.Select(h => h.InnerText.Trim()));
+            }
+
+            var safety = page.Descendants("ul").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("safety")).FirstOrDefault();
+            if (safety != null)
+            {
+                var dd = safety.Descendants("li").ToList();
+                ret.AddRange(dd.Select(h => h.InnerText.Trim()));
+            }
+            
+            return ret;
+        }
+
+        private Dictionary<string, string> GetTechnicalData(HtmlNode page)
+        {
+            Dictionary<string, string> ret = new Dictionary<string, string>();
+            var td = page.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("technicalDetailsColumn")).FirstOrDefault();
+            if (td != null)
+            {
+                var dl = td.ChildNodes.Where(n=>n.Name == "dl").FirstOrDefault();
+                if (dl != null)
+                {
+                    var list = dl.Descendants();
+                    string currentName = null;
+                    foreach (var node in list)
+                    {
+                        if (node.Name == "dt")
+                        {
+                            currentName = node.InnerText.Trim().Replace(":", "");
+                        }
+                        else if (node.Name == "dd")
+                        {
+                            var texts = node.Descendants("#text").ToList();
+                            string currentValue;
+                            if (texts.Any())
+                            {
+                                if (texts.Count() > 2)
+                                {
+                                    currentValue = texts[2].InnerText.Trim();
+                                }
+                                else
+                                {
+                                    currentValue = texts[0].InnerText.Trim();
+                                }
+                            }
+                            else
+                            {
+                                currentValue = node.InnerText.Trim();
+                            }
+                                
+                            ret.Add(currentName, currentValue);
+                        }
+                    }
+                }
+                else
+                {
+                    logger.WarnFormat("No dl tag found: {0}", td.InnerHtml);
+                }
+            }
+            else
+            {
+                logger.DebugFormat("no technivalDetailsColumn found: {0}.", page.InnerHtml);
+            }
+            return ret;
+        }
+
         private AdHistory GetAdData(CarAdsContext ctx, int adId, HtmlNode page)
         {
             AdHistory he = new AdHistory();
@@ -352,19 +479,22 @@ namespace CarAdCrawler.MobileDe
 
             var details = GetDetails(page);
             var cands = GetCategoryAndStateStrings(page);
+            var features = GetFeatureStrings(page);
+            var technical = GetTechnicalData(page);
 
             he.Km = GetKm(details);
             he.FirstReg = GetFirstReg(details);
             he.Title = GetTitle(page);
+            he.HP = GetHP(details);
 
             var c = GetCategory(cands);
             he.Category = c;
             he.States = GetStates(he, cands);
             he.Address = GetAddress(page);
             he.Fuel = GetFuelType(details);
-            he.GearBox = null;
+            he.GearBox = GetGearBox(details);
             he.SellerType = GetSellerType(ctx, page);
-            he.Features = null;
+            he.Features = GetFeatures(he, features);
             he.Description = GetDescription(page);
 
             return he;

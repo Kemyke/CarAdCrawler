@@ -75,6 +75,7 @@
   <ItemGroup>
     <Compile Include="Entities\Ad.cs" />
     <Compile Include="Entities\AdHistory.cs" />
+    <Compile Include="Entities\AdHistoryFeature.cs" />
     <Compile Include="Entities\AdHistoryState.cs" />
     <Compile Include="Entities\CarAdsContext.cs" />
     <Compile Include="Entities\CarAdsInitializer.cs" />

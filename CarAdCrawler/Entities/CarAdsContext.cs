@@ -21,9 +21,6 @@ namespace CarAdCrawler.Entities
         public DbSet<Ad> Ads { get; set; }
         public DbSet<AdHistory> AdHistory { get; set; }
 
-        public DbSet<Feature> Features { get; set; }
-        public DbSet<GearBox> GearBoxes { get; set; }
-
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             modelBuilder.Conventions.Remove<OneToManyCascadeDeleteConvention>();

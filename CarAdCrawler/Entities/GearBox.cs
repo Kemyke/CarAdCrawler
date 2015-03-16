@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace CarAdCrawler.Entities
 {
-    public class GearBox
+    public enum GearBox
     {
-        [Key]
-        public int Id { get; set; }
-        public string Name { get; set; }
+        Schaltgetriebe,
+        Halbautomatik,
+        Automatik,
     }
 }
