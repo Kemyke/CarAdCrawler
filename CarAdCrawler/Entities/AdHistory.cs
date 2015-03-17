@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -32,7 +33,7 @@ namespace CarAdCrawler.Entities
         public decimal? ConsumptionCombined { get; set; }
         public decimal? ConsumptionUrban { get; set; }
         public decimal? ConsumptionExtraUrban { get; set; }
-        public int ?CO2Emission { get; set; }
+        public int? CO2Emission { get; set; }
         public EmissionClasses? EmissionClass { get; set; }
         public EmissionStickers? EmissionSticker { get; set; }
         public int? PrevOwnerCount { get; set; }
@@ -46,28 +47,24 @@ namespace CarAdCrawler.Entities
         public virtual ICollection<AdHistoryState> States { get; set; }
 
         public Ad Ad { get; set; }
-    }
 
-    public class Comparer
-    {
-        public bool Diff<T>(T old, T @new, out T diff) where T : new()
+        public List<PropertyInfo> GetChangedProps(AdHistory @new)
         {
-            bool isChanged = false;
-            diff = new T();
-            foreach(var pi in typeof(T).GetProperties())
+            List<PropertyInfo> changedProps = new List<PropertyInfo>();
+
+            foreach (var pi in typeof(AdHistory).GetProperties())
             {
                 if (pi.Name != "Ad" && pi.Name != "Id" && pi.Name != "AdId" && pi.Name != "Date")
                 {
                     var newValue = pi.GetValue(@new);
-                    var oldValue = pi.GetValue(old);
+                    var oldValue = pi.GetValue(this);
 
                     IEnumerable chk = oldValue as IEnumerable;
                     if (chk == null)
                     {
                         if (!object.Equals(oldValue, newValue))
                         {
-                            pi.SetValue(diff, newValue);
-                            isChanged = true;
+                            changedProps.Add(pi);
                         }
                     }
                     else
@@ -79,8 +76,7 @@ namespace CarAdCrawler.Entities
                             IEnumerable<Feature> nfl = ((ICollection<AdHistoryFeature>)newValue).Select(o => o.Feature);
                             if (!(ofl.Count() == nfl.Count() && ofl.Intersect(nfl).Count() == nfl.Count()))
                             {
-                                pi.SetValue(diff, newValue);
-                                isChanged = true;
+                                changedProps.Add(pi);
                             }
                         }
                         else
@@ -92,8 +88,7 @@ namespace CarAdCrawler.Entities
                                 IEnumerable<State> nsl = ((ICollection<AdHistoryState>)newValue).Select(o => o.State);
                                 if (!(osl.Count() == nsl.Count() && osl.Intersect(nsl).Count() == nsl.Count()))
                                 {
-                                    pi.SetValue(diff, newValue);
-                                    isChanged = true;
+                                    changedProps.Add(pi);
                                 }
                             }
                         }
@@ -101,7 +96,7 @@ namespace CarAdCrawler.Entities
                 }
             }
 
-            return isChanged;
+            return changedProps;
         }
     }
 }

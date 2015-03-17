@@ -529,10 +529,7 @@ namespace CarAdCrawler.MobileDe
 
         private AdHistory GetChangedData(int adId, AdHistory lastHistory, AdHistory currentData)
         {
-            AdHistory changedData = new AdHistory();
-            bool isChanged = new Comparer().Diff<AdHistory>(lastHistory, currentData, out changedData);
-            changedData.Date = DateTime.Now;
-            changedData.AdId = adId;
+            bool isChanged = lastHistory.GetChangedProps(currentData).Any();
 
             if(!isChanged)
             {
@@ -540,7 +537,7 @@ namespace CarAdCrawler.MobileDe
             }
             else
             {
-                return changedData;
+                return currentData;
             }
         }
 
@@ -596,8 +593,5 @@ namespace CarAdCrawler.MobileDe
                 }
             }
         }
-
-
-        
     }
 }
