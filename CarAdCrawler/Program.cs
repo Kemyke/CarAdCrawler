@@ -13,6 +13,7 @@ using System.Web;
 using System.Data.Entity;
 using CarAdCrawler.Entities;
 using CarAdCrawler.MobileDe;
+using System.Diagnostics;
 
 [assembly: log4net.Config.XmlConfigurator(Watch = true)]
 namespace CarAdCrawler
@@ -21,14 +22,22 @@ namespace CarAdCrawler
     {
         static void Main(string[] args)
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
             MobileDeCarAdCrawler mobileCrawler = new MobileDeCarAdCrawler();
 
+            Console.WriteLine("Load makes and models start.");
             var makes = mobileCrawler.LoadMakes();
             mobileCrawler.LoadModels(makes);
             mobileCrawler.SaveMakesAndModels(makes);
-            mobileCrawler.Crawl(m => m.MakeId == 3500, m => m.ModelId == 5);
+            Console.WriteLine("Load makes and models end. {0}", sw.Elapsed);
+            //mobileCrawler.Crawl(m => m.MakeId == 3500, m => m.ModelId == 5);
+            mobileCrawler.Crawl(m => m.Id > 5, m => true);
+            //mobileCrawler.Crawl();
 
-            Console.Write("Completed!");
+            sw.Stop();
+            Console.Write("Completed! {0}", sw.Elapsed);
             Console.ReadLine();
         }
     }

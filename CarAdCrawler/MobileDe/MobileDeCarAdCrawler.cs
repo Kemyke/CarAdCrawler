@@ -14,6 +14,7 @@ using System.Data.Entity;
 using CarAdCrawler.Entities;
 using System.Linq.Expressions;
 using log4net;
+using System.Diagnostics;
 
 namespace CarAdCrawler.MobileDe
 {
@@ -171,24 +172,40 @@ namespace CarAdCrawler.MobileDe
             {
                 foreach (var make in ctx.Makes.Where(makeFilter))
                 {
-                    foreach (var model in ctx.Models.Where(m => m.ParentId == make.Id).Where(modelFilter))
+                    Parallel.ForEach(ctx.Models.Where(m => m.ParentId == make.Id).Where(modelFilter), model =>
                     {
-                        PoliteWebCrawler crawler = new PoliteWebCrawler(null, new MobileDeAdDecisionMaker(make, model), null, null, null, null, null, null, null);
-                        crawler.CrawlBag = new { make, model };
-                        crawler.PageCrawlCompletedAsync += crawler_ProcessPageCrawlCompleted;
-
-                        string url = string.Format("http://suchen.mobile.de/auto/{0}-{1}.html?isSearchRequest=true&scopeId=C&sortOption.sortBy=price.consumerGrossEuro&makeModelVariant1.makeId={2}&makeModelVariant1.modelId={3}", make.Name, model.Name, make.MakeId, model.ModelId);
-                        var result = crawler.Crawl(new Uri(url));
-
-                        if (result.ErrorOccurred)
                         {
-                            logger.InfoFormat("Crawl of {0} completed with error: {1}", result.RootUri.AbsoluteUri, result.ErrorException.Message);
+                            num = 0;
+                            string s = string.Format("Model {0} started.", string.Concat(make.Name, " ", model.Name));
+                            logger.DebugFormat(s);
+                            Console.WriteLine(s);
+
+
+                            Stopwatch sw = new Stopwatch();
+                            sw.Start();
+                            PoliteWebCrawler crawler = new PoliteWebCrawler(null, new MobileDeAdDecisionMaker(make, model), null, null, null, null, null, null, null);
+                            
+                            crawler.CrawlBag = new { make, model };
+                            crawler.PageCrawlCompletedAsync += crawler_ProcessPageCrawlCompleted;
+
+                            string url = string.Format("http://suchen.mobile.de/auto/{0}-{1}.html?isSearchRequest=true&scopeId=C&sortOption.sortBy=price.consumerGrossEuro&makeModelVariant1.makeId={2}&makeModelVariant1.modelId={3}", make.Name, model.Name, make.MakeId, model.ModelId);
+                            var result = crawler.Crawl(new Uri(url));
+
+                            if (result.ErrorOccurred)
+                            {
+                                logger.InfoFormat("Crawl of {0} completed with error: {1}", result.RootUri.AbsoluteUri, result.ErrorException.Message);
+                            }
+                            else
+                            {
+                                logger.InfoFormat("Crawl of {0} completed without error.", result.RootUri.AbsoluteUri);
+                            }
+                            sw.Stop();
+
+                            s = string.Format("Model {0} finished. Time: {1}.", string.Concat(make.Name, " ", model.Name), sw.Elapsed);
+                            logger.DebugFormat(s);
+                            Console.WriteLine(s);
                         }
-                        else
-                        {
-                            logger.InfoFormat("Crawl of {0} completed without error.", result.RootUri.AbsoluteUri);
-                        }
-                    }
+                    });
                 }
             }
         }
@@ -541,9 +558,16 @@ namespace CarAdCrawler.MobileDe
             }
         }
 
+        private int num = 0;
         private void crawler_ProcessPageCrawlCompleted(object sender, PageCrawlCompletedArgs e)
         {
+            Console.WriteLine("Model crawled page num: {0}.", ++num);
             CrawledPage crawledPage = e.CrawledPage;
+
+            if(!crawledPage.Uri.ToString().Contains("auto-inserat"))
+            {
+                return;
+            }
 
             if (crawledPage.WebException != null || crawledPage.HttpWebResponse.StatusCode != HttpStatusCode.OK)
             {
@@ -561,11 +585,17 @@ namespace CarAdCrawler.MobileDe
                     string id = e.CrawledPage.Uri.Segments[3].Replace(".html", string.Empty);
                     using (var ctx = new CarAdsContext())
                     {
-                        Ad ad = ctx.Ads.Where(a => a.AdId == id).SingleOrDefault();
-                        if (ad == null)
+                        Ad ad;
+
+                        lock (logger)
                         {
-                            ad = CreateAd(id, ((WebCrawler)sender).CrawlBag.make, ((WebCrawler)sender).CrawlBag.model);
-                            ctx.Ads.Add(ad);
+                            ad = ctx.Ads.Where(a => a.AdId == id).SingleOrDefault();
+                            if (ad == null)
+                            {
+                                ad = CreateAd(id, ((WebCrawler)sender).CrawlBag.make, ((WebCrawler)sender).CrawlBag.model);
+                                ctx.Ads.Add(ad);
+                                ctx.SaveChanges();
+                            }
                         }
 
                         AdHistory lastHistory = ctx.AdHistory.Where(ah => ah.AdId == ad.Id).OrderByDescending(ah => ah.Date).FirstOrDefault();

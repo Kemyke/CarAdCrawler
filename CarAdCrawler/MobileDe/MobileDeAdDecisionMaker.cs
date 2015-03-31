@@ -23,7 +23,7 @@ namespace CarAdCrawler.MobileDe
             {
                 CrawlDecision ret;
                 bool isAd = pageToCrawl.Uri.ToString().ToLower().Contains("auto-inserat");
-                bool isList = pageToCrawl.Uri.ToString().ToLower().Contains(string.Format("{0}-{1}.html", make.Name.ToLower(), model.Name.ToLower())) && pageToCrawl.Uri.ToString().ToLower().Contains("pagenumber");
+                bool isList = pageToCrawl.Uri.ToString().ToLower().Contains(string.Format("{0}-{1}.html", make.Name.ToLower().Replace(" ", "-"), model.Name.ToLower().Replace(" ", "-"))) && pageToCrawl.Uri.ToString().ToLower().Contains("pagenumber");
                 if (isList || crawlContext.CrawledCount == 0)
                 {
                     ret = new CrawlDecision() { Allow = true };
