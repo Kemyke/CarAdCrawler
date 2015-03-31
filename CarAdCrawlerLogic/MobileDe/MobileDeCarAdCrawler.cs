@@ -16,6 +16,7 @@ using System.Linq.Expressions;
 using log4net;
 using System.Diagnostics;
 
+[assembly: log4net.Config.XmlConfigurator(Watch = true)]
 namespace CarAdCrawler.MobileDe
 {
     public class MobileDeCarAdCrawler

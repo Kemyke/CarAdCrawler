@@ -5,6 +5,8 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarAdCrawler", "CarAdCrawler\CarAdCrawler.csproj", "{C6F30629-69BF-4C86-AF14-1B212E9B355D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarAdCrawlerLogic", "CarAdCrawlerLogic\CarAdCrawlerLogic.csproj", "{8D8DDE01-4B64-4B83-91B3-5AA8EF942557}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{C6F30629-69BF-4C86-AF14-1B212E9B355D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C6F30629-69BF-4C86-AF14-1B212E9B355D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C6F30629-69BF-4C86-AF14-1B212E9B355D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D8DDE01-4B64-4B83-91B3-5AA8EF942557}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D8DDE01-4B64-4B83-91B3-5AA8EF942557}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D8DDE01-4B64-4B83-91B3-5AA8EF942557}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D8DDE01-4B64-4B83-91B3-5AA8EF942557}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
