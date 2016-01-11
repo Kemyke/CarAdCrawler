@@ -37,24 +37,24 @@ namespace CarAdCrawler.MobileDe
                 var html = wc.DownloadString(new Uri("http://www.mobile.de"));
                 m.LoadHtml(html);
 
-                var sn = m.DocumentNode.Descendants("select").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("selectMake")).FirstOrDefault();
+                //var sn = m.DocumentNode.Descendants("select").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("selectMake")).FirstOrDefault();
 
-                var loadedMakes = sn.Descendants("option").ToList();
-                foreach (var make in loadedMakes)
-                {
-                    if (make.Attributes.Contains("value"))
-                    {
-                        int makeId;
-                        if (int.TryParse(make.Attributes["value"].Value, out makeId))
-                        {
-                            string makeName = make.InnerText.Trim();
-                            if (!string.IsNullOrEmpty(makeName))
-                            {
-                                makes.Add(new Make() { MakeId = makeId, Name = makeName, CreateDate = DateTime.Now, Models = new List<Model>() });
-                            }
-                        }
-                    }
-                }
+                //var loadedMakes = sn.Descendants("option").ToList();
+                //foreach (var make in loadedMakes)
+                //{
+                //    if (make.Attributes.Contains("value"))
+                //    {
+                //        int makeId;
+                //        if (int.TryParse(make.Attributes["value"].Value, out makeId))
+                //        {
+                //            string makeName = make.InnerText.Trim();
+                //            if (!string.IsNullOrEmpty(makeName))
+                //            {
+                                makes.Add(new Make() { Id = 1, MakeId = 3500, Name = "BMW", CreateDate = DateTime.Now, Models = new List<Model>() });
+                //            }
+                //        }
+                //    }
+                //}
             }
 
             logger.DebugFormat("Makes loaded!");
@@ -83,7 +83,7 @@ namespace CarAdCrawler.MobileDe
                                 string modelName = model.InnerText.Replace("&nbsp;", "").Trim();
                                 if (!string.IsNullOrEmpty(modelName))
                                 {
-                                    make.Models.Add(new Model() { ModelId = modelId, Name = modelName, ParentId = make.Id, CreateDate = DateTime.Now, Parent = make });
+                                    make.Models.Add(new Model() { ModelId = modelId, Name = modelName, ParentId = make.Id, CreateDate = DateTime.Now });
                                 }
                             }
                         }
@@ -121,7 +121,7 @@ namespace CarAdCrawler.MobileDe
                             me.Models.Add(model);
                             logger.InfoFormat("New model found: {0}.", model.Name);
                         }
-
+                        
                         foreach (var model in db.Where(m => m.DeleteDate != null))
                         {
                             if (make.Models.Select(m2 => m2.ModelId).Contains(model.ModelId))
@@ -138,7 +138,6 @@ namespace CarAdCrawler.MobileDe
                             logger.InfoFormat("Model deleted: {0}.", model.Name);
                         }
                     }
-
                     ctx.SaveChanges();
                 }
 
@@ -565,7 +564,7 @@ namespace CarAdCrawler.MobileDe
             Console.WriteLine("Model crawled page num: {0}.", ++num);
             CrawledPage crawledPage = e.CrawledPage;
 
-            if(!crawledPage.Uri.ToString().Contains("auto-inserat"))
+            if(!crawledPage.Uri.ToString().Contains("details.html"))
             {
                 return;
             }
@@ -583,7 +582,11 @@ namespace CarAdCrawler.MobileDe
                 }
                 else
                 {
-                    string id = e.CrawledPage.Uri.Segments[3].Replace(".html", string.Empty);
+                    //string id = e.CrawledPage.Uri.Segments[3].Replace(".html", string.Empty);
+                    int s = e.CrawledPage.Uri.Query.IndexOf("id=") + 3;
+                    int end = e.CrawledPage.Uri.Query.IndexOf("&", s);
+                    string id = e.CrawledPage.Uri.Query.Substring(s, end - s);
+
                     using (var ctx = new CarAdsContext())
                     {
                         Ad ad;

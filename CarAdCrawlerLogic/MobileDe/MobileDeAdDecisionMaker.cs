@@ -22,7 +22,7 @@ namespace CarAdCrawler.MobileDe
             public CrawlDecision ShouldCrawlPage(PageToCrawl pageToCrawl, CrawlContext crawlContext)
             {
                 CrawlDecision ret;
-                bool isAd = pageToCrawl.Uri.ToString().ToLower().Contains("auto-inserat");
+                bool isAd = pageToCrawl.Uri.ToString().ToLower().Contains("details.html");
                 bool isList = pageToCrawl.Uri.ToString().ToLower().Contains(string.Format("{0}-{1}.html", make.Name.ToLower().Replace(" ", "-"), model.Name.ToLower().Replace(" ", "-"))) && pageToCrawl.Uri.ToString().ToLower().Contains("pagenumber");
                 if (isList || crawlContext.CrawledCount == 0)
                 {
@@ -32,7 +32,9 @@ namespace CarAdCrawler.MobileDe
                 {
                     using (var ctx = new CarAdsContext())
                     {
-                        string id = pageToCrawl.Uri.Segments[3].Replace(".html", string.Empty);
+                        int s = pageToCrawl.Uri.Query.IndexOf("id=") + 3;
+                        int e = pageToCrawl.Uri.Query.IndexOf("&", s);
+                        string id = pageToCrawl.Uri.Query.Substring(s, e - s); //pageToCrawl.Uri.Segments[3].Replace(".html", string.Empty);
                         bool isKnown = false; // ctx.Ads.Where(a => a.AdId == id).Any();
                         bool allow = isAd && !isKnown;
                         ret = new CrawlDecision() { Allow = allow, Reason = allow ? null : "isKnown" };
