@@ -9,6 +9,8 @@ using System.Web;
 using CarAdCrawler.Entities;
 using CarAdCrawler.MobileDe;
 using System.Diagnostics;
+using System.IO;
+using Newtonsoft.Json;
 
 namespace CarAdCrawler
 {
@@ -18,6 +20,7 @@ namespace CarAdCrawler
         {
             try
             {
+                var filter = LoadConfig();
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
 
@@ -28,9 +31,20 @@ namespace CarAdCrawler
                 mobileCrawler.LoadModels(makes);
                 mobileCrawler.SaveMakesAndModels(makes);
                 Console.WriteLine("Load makes and models end. {0}", sw.Elapsed);
-                //mobileCrawler.Crawl(m => m.MakeId == 3500, m => m.ModelId == 5);
+
+                foreach (var kvp in filter)
+                {
+                    foreach (var model in kvp.Value)
+                    {
+                        Task.Run(() =>
+                            {
+                                Console.WriteLine("Crawl started: {0} {1}", kvp.Key, model);
+                                mobileCrawler.Crawl(m => m.Name == kvp.Key, m => m.Name == model);
+                            });
+                    }
+                }
                 //mobileCrawler.Crawl(m => m.Id > 5, m => true);
-                mobileCrawler.Crawl();
+                //mobileCrawler.Crawl();
 
                 sw.Stop();
                 Console.Write("Completed! {0}", sw.Elapsed);
@@ -43,6 +57,30 @@ namespace CarAdCrawler
             {
                 Console.ReadLine();
             }
+        }
+
+        private static Dictionary<string, List<string>> LoadConfig()
+        {
+            Dictionary<string, List<string>> ret = new Dictionary<string, List<string>>();
+            string filter;
+            using (var streamReader = new StreamReader(@".\Filter.json", Encoding.UTF8))
+            {
+                filter = streamReader.ReadToEnd();
+            }
+
+            dynamic dynObj = JsonConvert.DeserializeObject(filter);
+            foreach(dynamic f in dynObj.filter)
+            {
+                string make = f.make;                
+                List<string> models = new List<string>();
+                ret.Add(make, models);
+                foreach(dynamic model in f.models)
+                {
+                    string name = model.name;
+                    models.Add(name);
+                }
+            }
+            return ret;
         }
     }
 }

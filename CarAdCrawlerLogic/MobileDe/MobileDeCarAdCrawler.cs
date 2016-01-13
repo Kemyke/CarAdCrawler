@@ -15,6 +15,7 @@ using CarAdCrawler.Entities;
 using System.Linq.Expressions;
 using log4net;
 using System.Diagnostics;
+using Newtonsoft.Json;
 
 [assembly: log4net.Config.XmlConfigurator(Watch = true)]
 namespace CarAdCrawler.MobileDe
@@ -34,27 +35,13 @@ namespace CarAdCrawler.MobileDe
             HtmlDocument m = new HtmlDocument();
             using (var wc = new System.Net.WebClient() { Encoding = Encoding.UTF8 })
             {
-                var html = wc.DownloadString(new Uri("http://www.mobile.de"));
-                m.LoadHtml(html);
+                var html = wc.DownloadString(new Uri("http://www.mobile.de/svc/r/makes/Car"));
 
-                //var sn = m.DocumentNode.Descendants("select").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("selectMake")).FirstOrDefault();
-
-                //var loadedMakes = sn.Descendants("option").ToList();
-                //foreach (var make in loadedMakes)
-                //{
-                //    if (make.Attributes.Contains("value"))
-                //    {
-                //        int makeId;
-                //        if (int.TryParse(make.Attributes["value"].Value, out makeId))
-                //        {
-                //            string makeName = make.InnerText.Trim();
-                //            if (!string.IsNullOrEmpty(makeName))
-                //            {
-                                makes.Add(new Make() { Id = 1, MakeId = 3500, Name = "BMW", CreateDate = DateTime.Now, Models = new List<Model>() });
-                //            }
-                //        }
-                //    }
-                //}
+                dynamic dynObj = JsonConvert.DeserializeObject(html);
+                foreach(dynamic dynEl in dynObj.makes)
+                {
+                    makes.Add(new Make() { MakeId = dynEl.i, Name = dynEl.n, CreateDate = DateTime.Now, Models = new List<Model>() });
+                }
             }
 
             logger.DebugFormat("Makes loaded!");
@@ -102,8 +89,13 @@ namespace CarAdCrawler.MobileDe
                 {
                     if (!ctx.Makes.Any(m => m.MakeId == make.MakeId))
                     {
-                        ctx.Makes.Add(make);
-                        logger.InfoFormat("New make found: {0}.", make.Name);
+                        var newMake = ctx.Makes.Add(make);
+                        logger.InfoFormat("New make found: {0}.", newMake.Name);
+                        foreach(Model model in newMake.Models)
+                        {
+                            model.ParentId = newMake.Id;
+                            ctx.Models.Add(model);
+                        }
                     }
                     else
                     {
@@ -561,13 +553,40 @@ namespace CarAdCrawler.MobileDe
         private int num = 0;
         private void crawler_ProcessPageCrawlCompleted(object sender, PageCrawlCompletedArgs e)
         {
-            Console.WriteLine("Model crawled page num: {0}.", ++num);
             CrawledPage crawledPage = e.CrawledPage;
 
             if(!crawledPage.Uri.ToString().Contains("details.html"))
             {
+                string listpage = string.Format("{0}-{1}.html", ((WebCrawler)sender).CrawlBag.make.Name, ((WebCrawler)sender).CrawlBag.model.Name);
+                if (crawledPage.Uri.ToString().Contains(listpage))
+                {
+                    string pagenum;
+                    int s = e.CrawledPage.Uri.Query.IndexOf("pageNumber=");
+                    if (s > -1)
+                    {
+                        int end = e.CrawledPage.Uri.Query.IndexOf("&", s + 11);
+                        if (end == -1)
+                        {
+                            pagenum = e.CrawledPage.Uri.Query.Substring(s);
+                        }
+                        else
+                        {
+                            pagenum = e.CrawledPage.Uri.Query.Substring(s, end - s);
+                        }
+                    }
+                    else
+                    {
+                        pagenum = "1";
+                    }
+                    
+
+                    Console.WriteLine("{0} {1} list page {2} crawled.", ((WebCrawler)sender).CrawlBag.make.Name, ((WebCrawler)sender).CrawlBag.model.Name, pagenum);
+                }
+
                 return;
             }
+
+            Console.WriteLine("{0} {1} crawled! Num: {2}.", ((WebCrawler)sender).CrawlBag.make.Name, ((WebCrawler)sender).CrawlBag.model.Name, ++num);
 
             if (crawledPage.WebException != null || crawledPage.HttpWebResponse.StatusCode != HttpStatusCode.OK)
             {

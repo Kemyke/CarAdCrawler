@@ -35,8 +35,8 @@ namespace CarAdCrawler.MobileDe
                         int s = pageToCrawl.Uri.Query.IndexOf("id=") + 3;
                         int e = pageToCrawl.Uri.Query.IndexOf("&", s);
                         string id = pageToCrawl.Uri.Query.Substring(s, e - s); //pageToCrawl.Uri.Segments[3].Replace(".html", string.Empty);
-                        bool isKnown = false; // ctx.Ads.Where(a => a.AdId == id).Any();
-                        bool allow = isAd && !isKnown;
+                        bool isKnown = ctx.Ads.Where(a => a.AdId == id).Any();
+                        bool allow = !isKnown;
                         ret = new CrawlDecision() { Allow = allow, Reason = allow ? null : "isKnown" };
                     }
                 }
