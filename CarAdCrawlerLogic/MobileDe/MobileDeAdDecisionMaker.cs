@@ -9,14 +9,15 @@ using System.Threading.Tasks;
 
 namespace CarAdCrawler.MobileDe
 {
-    public class MobileDeAdDecisionMaker : ICrawlDecisionMaker
+    public class MobileDeNewAdDecisionMaker : ICrawlDecisionMaker
     {
             private Make make;
             private Model model;
 
-            public MobileDeAdDecisionMaker(Make me, Model moe)
+            public MobileDeNewAdDecisionMaker(Make me, Model moe)
             { 
-                make = me; model = moe; 
+                make = me; 
+                model = moe; 
             }
 
             public CrawlDecision ShouldCrawlPage(PageToCrawl pageToCrawl, CrawlContext crawlContext)
@@ -34,7 +35,7 @@ namespace CarAdCrawler.MobileDe
                     {
                         int s = pageToCrawl.Uri.Query.IndexOf("id=") + 3;
                         int e = pageToCrawl.Uri.Query.IndexOf("&", s);
-                        string id = pageToCrawl.Uri.Query.Substring(s, e - s); //pageToCrawl.Uri.Segments[3].Replace(".html", string.Empty);
+                        string id = pageToCrawl.Uri.Query.Substring(s, e - s);
                         bool isKnown = ctx.Ads.Where(a => a.AdId == id).Any();
                         bool allow = !isKnown;
                         ret = new CrawlDecision() { Allow = allow, Reason = allow ? null : "isKnown" };

@@ -20,7 +20,6 @@ namespace CarAdCrawler
         {
             try
             {
-                var filter = LoadConfig();
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
 
@@ -32,22 +31,28 @@ namespace CarAdCrawler
                 mobileCrawler.SaveMakesAndModels(makes);
                 Console.WriteLine("Load makes and models end. {0}", sw.Elapsed);
 
+                var filter = LoadConfig();
+
                 foreach (var kvp in filter)
                 {
                     foreach (var model in kvp.Value)
                     {
                         Task.Run(() =>
-                            {
-                                Console.WriteLine("Crawl started: {0} {1}", kvp.Key, model);
-                                mobileCrawler.Crawl(m => m.Name == kvp.Key, m => m.Name == model);
-                            });
+                        {
+                            Console.WriteLine("Searching for new ad started: {0} {1}", kvp.Key, model);
+                            mobileCrawler.CrawlForNewAds(m => m.Name == kvp.Key, m => m.Name == model);
+                        });
+
+                        Task.Run(() =>
+                        {
+                            Console.WriteLine("Searching for update started: {0} {1}", kvp.Key, model);
+                            mobileCrawler.CrawlForAdUpdate(m => m.Name == kvp.Key, m => m.Name == model);
+                        });
                     }
                 }
-                //mobileCrawler.Crawl(m => m.Id > 5, m => true);
-                //mobileCrawler.Crawl();
 
                 sw.Stop();
-                Console.Write("Completed! {0}", sw.Elapsed);
+                Console.WriteLine("Completed! {0}", sw.Elapsed);
             }
             catch (Exception ex)
             {
@@ -57,6 +62,17 @@ namespace CarAdCrawler
             {
                 Console.ReadLine();
             }
+        }
+
+        private static List<string> GetAllModel(string makeName)
+        {
+            List<string> ret;
+            using (var ctx = new CarAdsContext())
+            {
+                Make make = ctx.Makes.Single(m => m.Name == makeName);
+                ret = ctx.Models.Where(m => m.ParentId == make.Id).Select(m => m.Name).ToList();
+            }
+            return ret;
         }
 
         private static Dictionary<string, List<string>> LoadConfig()
@@ -74,10 +90,17 @@ namespace CarAdCrawler
                 string make = f.make;                
                 List<string> models = new List<string>();
                 ret.Add(make, models);
-                foreach(dynamic model in f.models)
+                if (f.models.Count > 0)
                 {
-                    string name = model.name;
-                    models.Add(name);
+                    foreach (dynamic model in f.models)
+                    {
+                        string name = model.name;
+                        models.Add(name);
+                    }
+                }
+                else
+                {
+                    models.AddRange(GetAllModel(make));
                 }
             }
             return ret;

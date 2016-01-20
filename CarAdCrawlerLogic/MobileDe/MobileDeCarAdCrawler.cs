@@ -153,12 +153,75 @@ namespace CarAdCrawler.MobileDe
             logger = LogManager.GetLogger(typeof(MobileDeCarAdCrawler));
         }
 
-        public void Crawl()
+        public void CrawlForAdUpdate(Expression<Func<Make, bool>> makeFilter, Expression<Func<Model, bool>> modelFilter)
         {
-            Crawl(m => true, m => true);
+            DateTime now = DateTime.Now;
+            using (var ctx = new CarAdsContext())
+            {
+                foreach (var make in ctx.Makes.Where(makeFilter).ToList())
+                {
+                    foreach (var model in ctx.Models.Where(modelFilter).ToList())
+                    {
+                        foreach(var ad in ctx.Ads.Where(a=>a.MakeId == make.Id && a.ModelId == model.Id && a.DeleteDate == null).OrderBy(a=>a.RefreshDate).ToList())
+                        {
+                            if (ad.RefreshDate.HasValue && (now - ad.RefreshDate.Value).TotalDays < 1)
+                            {
+                                Console.WriteLine("Ad {2}, {0} {1} fresh enough.", make.Name, model.Name, ad.AdId);
+                                continue;
+                            }
+
+                            Console.WriteLine("Refresh {0} {1} ad crawled! AdId: {2}.", make.Name, model.Name, ad.AdId);
+
+                            using (WebClient client = new WebClient())
+                            {
+                                HtmlDocument doc = new HtmlDocument();
+                                bool notFound = false;
+                                try
+                                {
+                                    string htmlCode = client.DownloadString(ad.URL);
+                                    doc.LoadHtml(htmlCode);
+                                }
+                                catch (WebException ex)
+                                {
+                                    var resp = ex.Response as HttpWebResponse;
+                                    if (resp != null)
+                                    {
+                                        if (resp.StatusCode == HttpStatusCode.NotFound)
+                                        {
+                                            notFound = true;
+                                        }
+                                        else
+                                        {
+                                            throw;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        throw;
+                                    }
+                                }
+                                //var error = doc.DocumentNode.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("errorMessage")).FirstOrDefault();
+                                //if (error == null)
+                                if (notFound)
+                                {
+                                    //Ad removed
+                                    ad.DeleteDate = DateTime.Now;
+                                    ctx.SaveChanges();                                    
+                                }
+                                else
+                                {
+                                    SaveAd(ad.AdId, ad.Make, ad.Model, doc.DocumentNode);
+                                    ad.RefreshDate = DateTime.Now;
+                                    ctx.SaveChanges();
+                                }
+                            } 
+                        }
+                    }
+                }
+            }
         }
 
-        public void Crawl(Expression<Func<Make, bool>> makeFilter, Expression<Func<Model, bool>> modelFilter)
+        public void CrawlForNewAds(Expression<Func<Make, bool>> makeFilter, Expression<Func<Model, bool>> modelFilter)
         {
             using (var ctx = new CarAdsContext())
             {
@@ -172,10 +235,9 @@ namespace CarAdCrawler.MobileDe
                             logger.DebugFormat(s);
                             Console.WriteLine(s);
 
-
                             Stopwatch sw = new Stopwatch();
                             sw.Start();
-                            PoliteWebCrawler crawler = new PoliteWebCrawler(null, new MobileDeAdDecisionMaker(make, model), null, null, null, null, null, null, null);
+                            PoliteWebCrawler crawler = new PoliteWebCrawler(null, new MobileDeNewAdDecisionMaker(make, model), null, null, null, null, null, null, null);
                             
                             crawler.CrawlBag = new { make, model };
                             crawler.PageCrawlCompletedAsync += crawler_ProcessPageCrawlCompleted;
@@ -550,14 +612,58 @@ namespace CarAdCrawler.MobileDe
             }
         }
 
+        private void SaveAd(string id, Make make, Model model, HtmlNode adPage)
+        {
+            using (var ctx = new CarAdsContext())
+            {
+                Ad ad;
+
+                lock (logger)
+                {
+                    ad = ctx.Ads.Where(a => a.AdId == id).SingleOrDefault();
+                    if (ad == null)
+                    {
+                        ad = CreateAd(id, make, model);
+                        ctx.Ads.Add(ad);
+                        ctx.SaveChanges();
+                    }
+                }
+
+                AdHistory lastHistory = ctx.AdHistory.Where(ah => ah.AdId == ad.Id).OrderByDescending(ah => ah.Date).FirstOrDefault();
+                AdHistory currentData = GetAdData(ctx, ad.Id, adPage);
+
+                AdHistory changedData = null;
+
+                if (lastHistory == null)
+                {
+                    changedData = currentData;
+                }
+                else
+                {
+                    changedData = GetChangedData(ad.Id, lastHistory, currentData);
+                }
+
+                if (changedData != null)
+                {
+                    logger.Debug(string.Format("Id: {0}.", id));
+                    ctx.AdHistory.Add(changedData);
+                }
+
+                ctx.SaveChanges();
+            }
+
+        }
+
         private int num = 0;
         private void crawler_ProcessPageCrawlCompleted(object sender, PageCrawlCompletedArgs e)
         {
             CrawledPage crawledPage = e.CrawledPage;
+            Make make = ((WebCrawler)sender).CrawlBag.make;
+            Model model = ((WebCrawler)sender).CrawlBag.model;
 
             if(!crawledPage.Uri.ToString().Contains("details.html"))
             {
-                string listpage = string.Format("{0}-{1}.html", ((WebCrawler)sender).CrawlBag.make.Name, ((WebCrawler)sender).CrawlBag.model.Name);
+                string listpage = string.Format("{0}-{1}.html", make.Name, model.Name);
                 if (crawledPage.Uri.ToString().Contains(listpage))
                 {
                     string pagenum;
@@ -580,13 +686,13 @@ namespace CarAdCrawler.MobileDe
                     }
                     
 
-                    Console.WriteLine("{0} {1} list page {2} crawled.", ((WebCrawler)sender).CrawlBag.make.Name, ((WebCrawler)sender).CrawlBag.model.Name, pagenum);
+                    Console.WriteLine("{0} {1} list page {2} crawled.", make.Name, model.Name, pagenum);
                 }
 
                 return;
             }
 
-            Console.WriteLine("{0} {1} crawled! Num: {2}.", ((WebCrawler)sender).CrawlBag.make.Name, ((WebCrawler)sender).CrawlBag.model.Name, ++num);
+            Console.WriteLine("New {0} {1} ad crawled! Num: {2}.", make.Name, model.Name, ++num);
 
             if (crawledPage.WebException != null || crawledPage.HttpWebResponse.StatusCode != HttpStatusCode.OK)
             {
@@ -601,48 +707,11 @@ namespace CarAdCrawler.MobileDe
                 }
                 else
                 {
-                    //string id = e.CrawledPage.Uri.Segments[3].Replace(".html", string.Empty);
                     int s = e.CrawledPage.Uri.Query.IndexOf("id=") + 3;
                     int end = e.CrawledPage.Uri.Query.IndexOf("&", s);
                     string id = e.CrawledPage.Uri.Query.Substring(s, end - s);
 
-                    using (var ctx = new CarAdsContext())
-                    {
-                        Ad ad;
-
-                        lock (logger)
-                        {
-                            ad = ctx.Ads.Where(a => a.AdId == id).SingleOrDefault();
-                            if (ad == null)
-                            {
-                                ad = CreateAd(id, ((WebCrawler)sender).CrawlBag.make, ((WebCrawler)sender).CrawlBag.model);
-                                ctx.Ads.Add(ad);
-                                ctx.SaveChanges();
-                            }
-                        }
-
-                        AdHistory lastHistory = ctx.AdHistory.Where(ah => ah.AdId == ad.Id).OrderByDescending(ah => ah.Date).FirstOrDefault();
-                        AdHistory currentData = GetAdData(ctx, ad.Id, e.CrawledPage.HtmlDocument.DocumentNode);
-
-                        AdHistory changedData = null;
-
-                        if(lastHistory == null)
-                        {
-                            changedData = currentData;
-                        }
-                        else
-                        {
-                            changedData = GetChangedData(ad.Id, lastHistory, currentData);
-                        }
-
-                        if (changedData != null)
-                        {
-                            logger.Debug(string.Format("Id: {0}.", id));
-                            ctx.AdHistory.Add(changedData);
-                        }
-
-                        ctx.SaveChanges();
-                    }
+                    SaveAd(id, make, model, e.CrawledPage.HtmlDocument.DocumentNode);
                 }
             }
         }

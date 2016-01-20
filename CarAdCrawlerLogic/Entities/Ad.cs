@@ -15,6 +15,7 @@ namespace CarAdCrawler.Entities
         public int MakeId { get; set; }
         public int ModelId { get; set; }
         public DateTime CreateDate { get; set; }
+        public DateTime? RefreshDate { get; set; }
         public DateTime? DeleteDate { get; set; }
         public string URL { get; set; }
 
