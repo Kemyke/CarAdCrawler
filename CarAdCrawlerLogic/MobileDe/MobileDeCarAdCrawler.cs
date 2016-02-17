@@ -162,18 +162,23 @@ namespace CarAdCrawler.MobileDe
                 {
                     foreach (var model in ctx.Models.Where(modelFilter).ToList())
                     {
-                        foreach(var ad in ctx.Ads.Where(a=>a.MakeId == make.Id && a.ModelId == model.Id && a.DeleteDate == null).OrderBy(a=>a.RefreshDate).ToList())
+                        var ads = ctx.Ads.Where(a=>a.MakeId == make.Id && a.ModelId == model.Id && a.DeleteDate == null).OrderBy(a=>a.RefreshDate).ToList();
+                        var allNum = ads.Count;
+                        var num = 0;
+                        foreach(var ad in ads)
                         {
+                            num++;
                             if (ad.RefreshDate.HasValue && (now - ad.RefreshDate.Value).TotalDays < 1)
                             {
-                                Console.WriteLine("Ad {2}, {0} {1} fresh enough.", make.Name, model.Name, ad.AdId);
+                                Console.WriteLine("{0}/{1} Ad {2}, {3} {4} fresh enough.", num, allNum, ad.AdId, make.Name, model.Name);
                                 continue;
                             }
 
-                            Console.WriteLine("Refresh {0} {1} ad crawled! AdId: {2}.", make.Name, model.Name, ad.AdId);
+                            Console.WriteLine("{0}/{1} Refresh {2} {3} ad crawled! AdId: {4}.", num, allNum, make.Name, model.Name, ad.AdId);
 
                             using (WebClient client = new WebClient())
                             {
+                                client.Encoding = Encoding.UTF8;
                                 HtmlDocument doc = new HtmlDocument();
                                 bool notFound = false;
                                 try
@@ -229,36 +234,34 @@ namespace CarAdCrawler.MobileDe
                 {
                     Parallel.ForEach(ctx.Models.Where(m => m.ParentId == make.Id).Where(modelFilter), model =>
                     {
+                        num = 0;
+                        string s = string.Format("Model {0} started.", string.Concat(make.Name, " ", model.Name));
+                        logger.DebugFormat(s);
+                        Console.WriteLine(s);
+
+                        Stopwatch sw = new Stopwatch();
+                        sw.Start();
+                        PoliteWebCrawler crawler = new PoliteWebCrawler(null, new MobileDeNewAdDecisionMaker(make, model), null, null, null, null, null, null, null);
+
+                        crawler.CrawlBag = new { make, model };
+                        crawler.PageCrawlCompletedAsync += crawler_ProcessPageCrawlCompleted;
+
+                        string url = string.Format("http://suchen.mobile.de/auto/{0}-{1}.html?isSearchRequest=true&scopeId=C&sortOption.sortBy=price.consumerGrossEuro&makeModelVariant1.makeId={2}&makeModelVariant1.modelId={3}", make.Name, model.Name, make.MakeId, model.ModelId);
+                        var result = crawler.Crawl(new Uri(url));
+
+                        if (result.ErrorOccurred)
                         {
-                            num = 0;
-                            string s = string.Format("Model {0} started.", string.Concat(make.Name, " ", model.Name));
-                            logger.DebugFormat(s);
-                            Console.WriteLine(s);
-
-                            Stopwatch sw = new Stopwatch();
-                            sw.Start();
-                            PoliteWebCrawler crawler = new PoliteWebCrawler(null, new MobileDeNewAdDecisionMaker(make, model), null, null, null, null, null, null, null);
-                            
-                            crawler.CrawlBag = new { make, model };
-                            crawler.PageCrawlCompletedAsync += crawler_ProcessPageCrawlCompleted;
-
-                            string url = string.Format("http://suchen.mobile.de/auto/{0}-{1}.html?isSearchRequest=true&scopeId=C&sortOption.sortBy=price.consumerGrossEuro&makeModelVariant1.makeId={2}&makeModelVariant1.modelId={3}", make.Name, model.Name, make.MakeId, model.ModelId);
-                            var result = crawler.Crawl(new Uri(url));
-
-                            if (result.ErrorOccurred)
-                            {
-                                logger.InfoFormat("Crawl of {0} completed with error: {1}", result.RootUri.AbsoluteUri, result.ErrorException.Message);
-                            }
-                            else
-                            {
-                                logger.InfoFormat("Crawl of {0} completed without error.", result.RootUri.AbsoluteUri);
-                            }
-                            sw.Stop();
-
-                            s = string.Format("Model {0} finished. Time: {1}.", string.Concat(make.Name, " ", model.Name), sw.Elapsed);
-                            logger.DebugFormat(s);
-                            Console.WriteLine(s);
+                            logger.InfoFormat("Crawl of {0} completed with error: {1}", result.RootUri.AbsoluteUri, result.ErrorException.Message);
                         }
+                        else
+                        {
+                            logger.InfoFormat("Crawl of {0} completed without error.", result.RootUri.AbsoluteUri);
+                        }
+                        sw.Stop();
+
+                        s = string.Format("Model {0} finished. Time: {1}.", string.Concat(make.Name, " ", model.Name), sw.Elapsed);
+                        logger.DebugFormat(s);
+                        Console.WriteLine(s);
                     });
                 }
             }
