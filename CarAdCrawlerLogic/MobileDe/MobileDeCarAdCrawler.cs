@@ -280,40 +280,31 @@ namespace CarAdCrawler.MobileDe
 
         private int GetPrice(HtmlNode page)
         {
-            var pn = page.Descendants("p").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("pricePrimaryCountryOfSale priceGross")).FirstOrDefault();
+            var pn = page.Descendants("span").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("h3 rbt-prime-price")).FirstOrDefault();
             int currPrice = int.Parse(pn.InnerText.Substring(0, pn.InnerText.IndexOf(" ")).Replace(".", ""));
             return currPrice;
         }
 
-        private List<HtmlNode> GetDetails(HtmlNode page)
-        {
-            var mainTechData = page.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("mainTechnicalData")).FirstOrDefault();
-            var dd = mainTechData.Descendants().SkipWhile(hn => hn.Name != "br").ToList();
-            var details = dd.Where(hn => hn.Name == "p").ToList();
-            return details;
-        }
-
-        private int? GetKm(List<HtmlNode> details)
+        private int? GetKm(HtmlNode page)
         {
             int km;
-            var node = details.Where(h => h.InnerText.Trim().EndsWith("km")).FirstOrDefault();
+            var node = page.Descendants("div").Where(d => d.Attributes.Contains("id") && d.Attributes["id"].Value.Contains("rbt-mileage-v")).FirstOrDefault();
 
-            if(node != null && int.TryParse(node.InnerText.Trim().Replace("&nbsp;km", "").Replace(".", ""), out km))
+            if (node != null && int.TryParse(node.InnerText.Trim().Replace("km", "").Replace(".", "").Trim(), out km))
             {
                 return km;
             }
             return null;
         }
 
-        private int? GetHP(List<HtmlNode> details)
+        private int? GetHP(HtmlNode page)
         {
             int ps;
-            var node = details.Where(h => h.InnerText.Trim().EndsWith("PS)")).FirstOrDefault();
-
+            var node = page.Descendants("div").Where(d => d.Attributes.Contains("id") && d.Attributes["id"].Value.Contains("rbt-power-v")).FirstOrDefault();
             if (node != null)
             {
                 var kwps = node.InnerText.Trim().Replace("PS)", "");
-                kwps = kwps.Substring(kwps.IndexOf('(') + 1);
+                kwps = kwps.Substring(kwps.IndexOf('(') + 1).Trim();
 
                 if(int.TryParse(kwps, out ps))
                 {
@@ -323,40 +314,51 @@ namespace CarAdCrawler.MobileDe
             return null;
         }
 
-        private DateTime? GetFirstReg(List<HtmlNode> details)
+        private DateTime? GetFirstReg(HtmlNode page)
         {
             DateTime firstReg;
-            var node = details.Where(h => h.InnerText.Trim().StartsWith("EZ")).FirstOrDefault();
+            var node = page.Descendants("div").Where(d => d.Attributes.Contains("id") && d.Attributes["id"].Value.Contains("rbt-firstRegistration-v")).FirstOrDefault();
 
-            if(node != null && DateTime.TryParse(node.InnerText.Trim().Replace("EZ ", ""), out firstReg))
+            if (node != null && DateTime.TryParse(node.InnerText.Trim(), out firstReg))
             {
                 return firstReg;
             }
             return null;
         }
 
-        private Fuel? GetFuelType(List<HtmlNode> details)
+        private Fuel? GetFuelType(HtmlNode page)
         {
-            var f = details.Select(h => enumSelector.ParseFuel(h.InnerText.Trim())).FirstOrDefault(s => s != null);
+            Fuel? f = null;
+            var node = page.Descendants("div").Where(d => d.Attributes.Contains("id") && d.Attributes["id"].Value.Contains("rbt-fuel-v")).FirstOrDefault();
+
+            if (node != null)
+            {
+                f = enumSelector.ParseFuel(node.InnerText.Trim());
+            }
             return f;
         }
 
-        private GearBox? GetGearBox(List<HtmlNode> details)
+        private GearBox? GetGearBox(HtmlNode page)
         {
-            var f = details.Select(h => enumSelector.ParseGearBox(h.InnerText.Trim())).FirstOrDefault(s => s != null);
+            GearBox? f = null;
+            var node = page.Descendants("div").Where(d => d.Attributes.Contains("id") && d.Attributes["id"].Value.Contains("rbt-transmission-v")).FirstOrDefault();
+            if (node != null)
+            {
+                f = enumSelector.ParseGearBox(node.InnerText.Trim());
+            }
             return f;
         }
 
         private string GetTitle(HtmlNode page)
         {
-            var sn = page.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("titleContainer")).FirstOrDefault();
-            var title = sn.ChildNodes[1].InnerText.Trim();
+            var sn = page.Descendants("h1").Where(d => d.Attributes.Contains("id") && d.Attributes["id"].Value.Contains("rbt-ad-title")).FirstOrDefault();
+            var title = sn.InnerText.Trim();
             return title;
         }
 
         private string GetDescription(HtmlNode page)
         {
-            var sn = page.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("ad-description")).FirstOrDefault();
+            var sn = page.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("description")).FirstOrDefault();
             if (sn != null)
             {
                 string desc = sn.InnerText.Replace("&nbsp;", " ").Trim();
@@ -367,7 +369,7 @@ namespace CarAdCrawler.MobileDe
 
         private VATRate? GetVATRate(HtmlNode page)
         {
-            var sn = page.Descendants("p").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("vatRate")).FirstOrDefault();
+            var sn = page.Descendants("p").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("rbt-vat")).FirstOrDefault();
             if (sn != null)
             {
                 VATRate? vr = enumSelector.ParseVatRate(sn.InnerText.Trim());
@@ -379,7 +381,7 @@ namespace CarAdCrawler.MobileDe
         private List<string> GetCategoryAndStateStrings(HtmlNode page)
         {
             List<string> ret;
-            var mainTechData = page.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("mainTechnicalData")).FirstOrDefault();
+            var mainTechData = page.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("technical-data")).FirstOrDefault();
             var s = mainTechData.Descendants("strong").FirstOrDefault();
             if(s != null)
             {
@@ -395,21 +397,14 @@ namespace CarAdCrawler.MobileDe
         }
 
         private MobileDeEnumSelector enumSelector = null;
-        private Category? GetCategory(List<string> cands)
+        private Category? GetCategory(HtmlNode page)
         {
             Category? ret = null;
-            var categories = cands.Select(s => enumSelector.ParseCategory(s)).Where(s => s != null);
-            if(categories.Any())
+
+            var node = page.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("rbt-sl")).FirstOrDefault();
+            if(node != null)
             {
-                if(categories.Count() > 1)
-                {
-                    logger.WarnFormat("Multiple categories found: {0}.", string.Join(",", cands));
-                }
-                ret = categories.First();
-            }
-            else
-            {
-                logger.ErrorFormat("No categories found: {0}.", string.Join(",", cands));
+                ret = enumSelector.ParseCategory(node.InnerText.Trim());
             }
             return ret;
         }
@@ -431,7 +426,7 @@ namespace CarAdCrawler.MobileDe
 
         private SellerType? GetSellerType(CarAdsContext ctx, HtmlNode page)
         {
-            var sellerData = page.Descendants("p").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("commercialStatus")).FirstOrDefault();
+            var sellerData = page.Descendants("div").Where(d => d.Attributes.Contains("id") && d.Attributes["id"].Value.Contains("rbt-top-dealer-info")).FirstOrDefault();
             var nameNode = sellerData.Descendants("a").FirstOrDefault();
             if(nameNode != null)
             {
@@ -445,7 +440,7 @@ namespace CarAdCrawler.MobileDe
 
         private string GetAddress(HtmlNode page)
         {
-            var address = page.Descendants("p").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("address")).FirstOrDefault();
+            var address = page.Descendants("p").Where(d => d.Attributes.Contains("id") && d.Attributes["id"].Value.Contains("rbt-seller-address")).FirstOrDefault();
             string ret = null;
             if(address != null)
             {
@@ -464,7 +459,7 @@ namespace CarAdCrawler.MobileDe
             }
             else
             {
-                logger.ErrorFormat("No states found: {0}.", string.Join(",", cands));
+                logger.ErrorFormat("No feature found: {0}.", string.Join(",", cands));
             }
             return ret;
         }
@@ -472,31 +467,10 @@ namespace CarAdCrawler.MobileDe
         private List<string> GetFeatureStrings(HtmlNode page)
         {
             List<string> ret = new List<string>();
-            var interior = page.Descendants("ul").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("interior")).FirstOrDefault();
+            var interior = page.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("rbt-features")).FirstOrDefault();
             if (interior != null)
             {
-                var dd = interior.Descendants("li").ToList();
-                ret.AddRange(dd.Select(h => h.InnerText.Trim()));
-            }
-
-            var exterior = page.Descendants("ul").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("exterior")).FirstOrDefault();
-            if (exterior != null)
-            {
-                var dd = exterior.Descendants("li").ToList();
-                ret.AddRange(dd.Select(h => h.InnerText.Trim()));
-            }
-
-            var extras = page.Descendants("ul").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("extras")).FirstOrDefault();
-            if (extras != null)
-            {
-                var dd = extras.Descendants("li").ToList();
-                ret.AddRange(dd.Select(h => h.InnerText.Trim()));
-            }
-
-            var safety = page.Descendants("ul").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("safety")).FirstOrDefault();
-            if (safety != null)
-            {
-                var dd = safety.Descendants("li").ToList();
+                var dd = interior.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("g-col-6")).ToList();
                 ret.AddRange(dd.Select(h => h.InnerText.Trim()));
             }
             
@@ -506,47 +480,22 @@ namespace CarAdCrawler.MobileDe
         private Dictionary<string, string> GetTechnicalData(HtmlNode page)
         {
             Dictionary<string, string> ret = new Dictionary<string, string>();
-            var td = page.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("technicalDetailsColumn")).FirstOrDefault();
+            var td = page.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("technical-data")).FirstOrDefault();
             if (td != null)
             {
-                var dl = td.ChildNodes.Where(n=>n.Name == "dl").FirstOrDefault();
-                if (dl != null)
+
+                var list = td.Descendants("div");
+                foreach (var node in list)
                 {
-                    var list = dl.Descendants();
-                    string currentName = null;
-                    foreach (var node in list)
+                    var texts = node.Descendants("div").ToList();
+                    if (texts.Count == 2)
                     {
-                        if (node.Name == "dt")
-                        {
-                            currentName = node.InnerText.Trim().Replace(":", "");
-                        }
-                        else if (node.Name == "dd")
-                        {
-                            var texts = node.Descendants("#text").ToList();
-                            string currentValue;
-                            if (texts.Any())
-                            {
-                                if (texts.Count() > 2)
-                                {
-                                    currentValue = texts[2].InnerText.Trim();
-                                }
-                                else
-                                {
-                                    currentValue = texts[0].InnerText.Trim();
-                                }
-                            }
-                            else
-                            {
-                                currentValue = node.InnerText.Trim();
-                            }
-                                
-                            ret.Add(currentName, currentValue);
-                        }
+                        ret.Add(texts[0].InnerText.Trim(), texts[1].InnerText.Trim());
                     }
-                }
-                else
-                {
-                    logger.WarnFormat("No dl tag found: {0}", td.InnerHtml);
+                    else
+                    {
+
+                    }
                 }
             }
             else
@@ -556,6 +505,139 @@ namespace CarAdCrawler.MobileDe
             return ret;
         }
 
+        private int? GetCC(HtmlNode page, int adId)
+        {
+            var node = page.Descendants("div").Where(d => d.Attributes.Contains("id") && d.Attributes["id"].Value.Contains("rbt-cubicCapacity-v")).FirstOrDefault();
+            if (node != null)
+            {
+                int ret;
+                string cc = node.InnerText.Trim();
+                int idx = cc.TakeWhile(c => !char.IsNumber(c)).Count();
+                cc = string.Concat(cc.Skip(idx).TakeWhile(c => !char.IsWhiteSpace(c)));
+
+                if (int.TryParse(cc, out ret))
+                {
+                    return ret;
+                }
+                else
+                {
+                    logger.WarnFormat("Cant parse CC: {0}.", cc);
+                    return null;
+                }
+            }
+
+            logger.DebugFormat("Cant find CC: {0}", adId);
+            return null;
+        }
+
+        private int? GetSeatNum(HtmlNode page, int adId)
+        {
+            var node = page.Descendants("div").Where(d => d.Attributes.Contains("id") && d.Attributes["id"].Value.Contains("rbt-numSeats-v")).FirstOrDefault();
+            if (node != null)
+            {
+                var seat = node.InnerText.Trim();
+                int ret;
+                if (int.TryParse(seat, out ret))
+                {
+                    return ret;
+                }
+                else
+                {
+                    logger.WarnFormat("Cant parse seats: {0}. Ad: {1}", seat, adId);
+                    return null;
+                }
+            }
+            else
+            {
+                logger.DebugFormat("Cant find seats: {0}.", adId);
+                return null;
+            }
+        }
+
+        private Doors? GetDoors(HtmlNode page, int adId)
+        {
+            var node = page.Descendants("div").Where(d => d.Attributes.Contains("id") && d.Attributes["id"].Value.Contains("rbt-doorCount-v")).FirstOrDefault();
+            if (node != null)
+            {
+                var text = node.InnerText.Trim();
+                var ret = enumSelector.ParseDoor(text);
+
+                if (ret == null)
+                {
+                    logger.WarnFormat("Cant parse doors: {0}. Ad: {1}", text, adId);
+                }
+                return ret;
+            }
+            else
+            {
+                logger.DebugFormat("Cant find doors: {0}.", adId);
+                return null;
+            }
+        }
+
+        private EmissionClasses? GetEmissionClass(HtmlNode page, int adId)
+        {
+            var node = page.Descendants("div").Where(d => d.Attributes.Contains("id") && d.Attributes["id"].Value.Contains("rbt-emissionClass-v")).FirstOrDefault();
+            if (node != null)
+            {
+                var text = node.InnerText.Trim();
+                var ret = enumSelector.ParseEmissionClass(text);
+
+                if (ret == null)
+                {
+                    logger.WarnFormat("Cant parse emission class: {0}. Ad: {1}", text, adId);
+                }
+                return ret;
+            }
+            else
+            {
+                logger.DebugFormat("Cant find emission class: {0}.", adId);
+                return null;
+            }
+        }
+
+        private EmissionStickers? GetEmissionSticker(HtmlNode page, int adId)
+        {
+            var node = page.Descendants("div").Where(d => d.Attributes.Contains("id") && d.Attributes["id"].Value.Contains("rbt-emissionsSticker-v")).FirstOrDefault();
+            if (node != null)
+            {
+                var text = node.InnerText.Trim();
+                var ret = enumSelector.ParseEmissionSticker(text);
+
+                if (ret == null)
+                {
+                    logger.WarnFormat("Cant parse emission sticker: {0}. Ad: {1}", text, adId);
+                }
+                return ret;
+            }
+            else
+            {
+                logger.DebugFormat("Cant find emission sticker: {0}.", adId);
+                return null;
+            }
+        }
+
+        private ExteriorColors? GetExteriorColor(HtmlNode page, int adId)
+        {
+            var node = page.Descendants("div").Where(d => d.Attributes.Contains("id") && d.Attributes["id"].Value.Contains("rbt-color-v")).FirstOrDefault();
+            if (node != null)
+            {
+                var text = node.InnerText.Trim();
+                var ret = enumSelector.ParseExteriorColor(text);
+
+                if (ret == null)
+                {
+                    logger.WarnFormat("Cant parse exterior color: {0}. Ad: {1}", text, adId);
+                }
+                return ret;
+            }
+            else
+            {
+                logger.DebugFormat("Cant find exterior color: {0}.", adId);
+                return null;
+            }
+        }
+
         private AdHistory GetAdData(CarAdsContext ctx, int adId, HtmlNode page)
         {
             AdHistory he = new AdHistory();
@@ -563,38 +645,36 @@ namespace CarAdCrawler.MobileDe
             he.AdId = adId;
             he.Price = GetPrice(page);
 
-            var details = GetDetails(page);
             var cands = GetCategoryAndStateStrings(page);
             var features = GetFeatureStrings(page);
             var technical = GetTechnicalData(page);
 
-            he.Km = GetKm(details);
-            he.FirstReg = GetFirstReg(details);
+            he.Km = GetKm(page);
+            he.FirstReg = GetFirstReg(page);
             he.Title = GetTitle(page);
-            he.HP = GetHP(details);
+            he.HP = GetHP(page);
 
-            var c = GetCategory(cands);
-            he.Category = c;
+            he.Category = GetCategory(page);
             he.States = GetStates(he, cands);
             he.Address = GetAddress(page);
-            he.Fuel = GetFuelType(details);
-            he.GearBox = GetGearBox(details);
+            he.Fuel = GetFuelType(page);
+            he.GearBox = GetGearBox(page);
             he.SellerType = GetSellerType(ctx, page);
             he.Features = GetFeatures(he, features);
             he.Description = GetDescription(page);
 
-            he.CC = enumSelector.GetCC(technical);
-            he.SeatNum = enumSelector.GetSeatNum(technical);
-            he.Doors = enumSelector.GetDoors(technical);
+            he.CC = GetCC(page, adId);
+            he.SeatNum = GetSeatNum(page, adId);
+            he.Doors = GetDoors(page, adId);
             he.ConsumptionCombined = enumSelector.GetCombinedConsumption(technical);
             he.ConsumptionUrban = enumSelector.GetUrbanConsumption(technical);
             he.ConsumptionExtraUrban = enumSelector.GetExtraUrbanConsumption(technical);
             he.CO2Emission = enumSelector.GetCO2Emission(technical);
-            he.EmissionClass = enumSelector.GetEmissionClass(technical);
-            he.EmissionSticker = enumSelector.GetEmissionSticker(technical);
+            he.EmissionClass = GetEmissionClass(page, adId);
+            he.EmissionSticker = GetEmissionSticker(page, adId);
             he.PrevOwnerCount = enumSelector.GetPrevOwnerCount(technical);
             he.MOT = enumSelector.GetMOT(technical);
-            he.ExteriorColor = enumSelector.GetExteriorColor(technical);
+            he.ExteriorColor = GetExteriorColor(page, adId);
             he.InteriorColor = enumSelector.GetInteriorColor(technical);
             he.InteriorDesign = enumSelector.GetInteriorDesign(technical);
             he.VatRate = GetVATRate(page);
@@ -703,7 +783,7 @@ namespace CarAdCrawler.MobileDe
             }
             else
             {
-                var sn = e.CrawledPage.HtmlDocument.DocumentNode.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("titleContainer")).FirstOrDefault();
+                var sn = e.CrawledPage.HtmlDocument.DocumentNode.Descendants("h1").Where(d => d.Attributes.Contains("id") && d.Attributes["id"].Value.Contains("rbt-ad-title")).FirstOrDefault();
                 if (sn == null)
                 {
                     logger.Debug("Not find");

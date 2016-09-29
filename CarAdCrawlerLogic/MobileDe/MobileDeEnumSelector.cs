@@ -502,15 +502,15 @@ namespace CarAdCrawler.MobileDe
 
         public Doors? ParseDoor(string door)
         {
-            if (door == "2/3 Türen")
+            if (door == "2/3")
             {
                 return Doors.D2or3;
             }
-            else if (door == "4/5 Türen")
+            else if (door == "4/5")
             {
                 return Doors.D4or5;
             }
-            else if (door == "6/7 Türen")
+            else if (door == "6/7")
             {
                 return Doors.D6or7;
             }
@@ -570,68 +570,6 @@ namespace CarAdCrawler.MobileDe
             }
 
             logger.WarnFormat("Can't parse emissionSticker: {0}.", emissionSticker);
-            return null;
-        }
-
-        public int? GetCC(Dictionary<string, string> data)
-        {
-            string cc;
-            if (data.TryGetValue("Hubraum", out cc))
-            {
-                int ret;
-                int idx = cc.TakeWhile(c => !char.IsNumber(c)).Count();
-                cc = string.Concat(cc.Skip(idx).TakeWhile(c => !char.IsWhiteSpace(c)));
-
-                if (int.TryParse(cc, out ret))
-                {
-                    return ret;
-                }
-                else
-                {
-                    logger.WarnFormat("Cant parse CC: {0}.", cc);
-                    return null;
-                }
-            }
-
-            logger.DebugFormat("Cant find CC: {0}.", string.Join(",", data.Keys));
-            return null;
-        }
-
-        public int? GetSeatNum(Dictionary<string, string> data)
-        {
-            string seat;
-            if (data.TryGetValue("Anzahl Sitzplätze", out seat))
-            {
-                int ret;
-                if (int.TryParse(seat, out ret))
-                {
-                    return ret;
-                }
-                else
-                {
-                    logger.WarnFormat("Cant parse seats: {0}.", seat);
-                    return null;
-                }
-            }
-
-            logger.DebugFormat("Cant find seats: {0}.", string.Join(",", data.Keys));
-            return null;
-        }
-
-        public Doors? GetDoors(Dictionary<string, string> data)
-        {
-            string door;
-            if (data.TryGetValue("Anzahl der Türen", out door))
-            {
-                Doors? ret = ParseDoor(door);
-                if (ret == null)
-                {
-                    logger.WarnFormat("Cant parse doors: {0}.", door);
-                }
-                return ret;
-            }
-
-            logger.DebugFormat("Cant find doors: {0}.", string.Join(",", data.Keys));
             return null;
         }
 
@@ -728,40 +666,6 @@ namespace CarAdCrawler.MobileDe
             }
 
             logger.DebugFormat("Cant find co2 emission: {0}.", string.Join(",", data.Keys));
-            return null;
-        }
-
-        public EmissionClasses? GetEmissionClass(Dictionary<string, string> data)
-        {
-            string c;
-            if (data.TryGetValue("Schadstoffklasse", out c))
-            {
-                EmissionClasses? ret = ParseEmissionClass(c);
-                if (ret == null)
-                {
-                    logger.WarnFormat("Cant parse emission class: {0}.", c);
-                }
-                return ret;
-            }
-
-            logger.DebugFormat("Cant find emission class: {0}.", string.Join(",", data.Keys));
-            return null;
-        }
-
-        public EmissionStickers? GetEmissionSticker(Dictionary<string, string> data)
-        {
-            string sticker;
-            if (data.TryGetValue("Umweltplakette", out sticker))
-            {
-                EmissionStickers? ret = ParseEmissionSticker(sticker);
-                if (ret == null)
-                {
-                    logger.WarnFormat("Cant parse emission sticker: {0}.", sticker);
-                }
-                return ret;
-            }
-
-            logger.DebugFormat("Cant find emission sticker: {0}.", string.Join(",", data.Keys));
             return null;
         }
 
