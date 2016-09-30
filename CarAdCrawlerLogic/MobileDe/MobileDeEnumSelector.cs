@@ -1,5 +1,5 @@
 ﻿using CarAdCrawler.Entities;
-using log4net;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,8 +10,8 @@ namespace CarAdCrawler.MobileDe
 {
     public class MobileDeEnumSelector
     {
-        private ILog logger = null;
-        public MobileDeEnumSelector(ILog logger)
+        private ILogger logger = null;
+        public MobileDeEnumSelector(ILogger logger)
         {
             this.logger = logger;
         }
@@ -35,7 +35,7 @@ namespace CarAdCrawler.MobileDe
             if (categoryString == "Andere")
                 return Category.Andere;
 
-            logger.WarnFormat("Can't parse category: {0}.", categoryString);
+            logger.Warn("Can't parse category: {0}.", categoryString);
             return null;
         }
 
@@ -48,7 +48,7 @@ namespace CarAdCrawler.MobileDe
             if (state == "Gebrauchtfahrzeug")
                 return State.Gebrauchtfahrzeug;
 
-            logger.WarnFormat("Can't parse state: {0}.", state);
+            logger.Warn("Can't parse state: {0}.", state);
             return null;
         }
 
@@ -87,7 +87,7 @@ namespace CarAdCrawler.MobileDe
             if (fuel.StartsWith("Andere"))
                 return Fuel.Andere;
 
-            logger.WarnFormat("Can't parse fuel: {0}.", fuel);
+            logger.Warn("Can't parse fuel: {0}.", fuel);
             return null;
         }
 
@@ -106,7 +106,7 @@ namespace CarAdCrawler.MobileDe
                 return GearBox.Halbautomatik;
             }
 
-            logger.WarnFormat("Can't parse gearbox: {0}.", gearBox);
+            logger.Warn("Can't parse gearbox: {0}.", gearBox);
             return null;
         }
 
@@ -325,7 +325,7 @@ namespace CarAdCrawler.MobileDe
                 return Feature.EinparkhilfeHintenUndVorne;
             }
 
-            logger.WarnFormat("Can't parse feature: {0}.", feature);
+            logger.Warn("Can't parse feature: {0}.", feature);
             return null;
         }
 
@@ -356,7 +356,7 @@ namespace CarAdCrawler.MobileDe
                 return InteriorDesigns.Other;
             }
 
-            logger.WarnFormat("Can't parse interior design: {0}.", interiorDesign);
+            logger.Warn("Can't parse interior design: {0}.", interiorDesign);
             return null;
         }
 
@@ -385,7 +385,7 @@ namespace CarAdCrawler.MobileDe
                 return InteriorColors.Other;
             }
 
-            logger.WarnFormat("Can't parse interior color: {0}.", interiorColor);
+            logger.Warn("Can't parse interior color: {0}.", interiorColor);
             return null;
         }
 
@@ -496,7 +496,7 @@ namespace CarAdCrawler.MobileDe
                 return ExteriorColors.YellowMetallic;
             }
 
-            logger.WarnFormat("Can't parse exterior color: {0}.", exteriorColor);
+            logger.Warn("Can't parse exterior color: {0}.", exteriorColor);
             return null;
         }
 
@@ -515,7 +515,7 @@ namespace CarAdCrawler.MobileDe
                 return Doors.D6or7;
             }
 
-            logger.WarnFormat("Can't parse door: {0}.", door);
+            logger.Warn("Can't parse door: {0}.", door);
             return null;
         }
 
@@ -546,7 +546,7 @@ namespace CarAdCrawler.MobileDe
                 return EmissionClasses.Euro6;
             }
 
-            logger.WarnFormat("Can't parse emissionClass: {0}.", emissionClass);
+            logger.Warn("Can't parse emissionClass: {0}.", emissionClass);
             return null;
         }
 
@@ -569,7 +569,7 @@ namespace CarAdCrawler.MobileDe
                 return EmissionStickers.None;
             }
 
-            logger.WarnFormat("Can't parse emissionSticker: {0}.", emissionSticker);
+            logger.Warn("Can't parse emissionSticker: {0}.", emissionSticker);
             return null;
         }
 
@@ -588,12 +588,12 @@ namespace CarAdCrawler.MobileDe
                 }
                 else
                 {
-                    logger.WarnFormat("Cant parse combined consumption: {0}.", cons);
+                    logger.Warn("Cant parse combined consumption: {0}.", cons);
                     return null;
                 }
             }
 
-            logger.DebugFormat("Cant find combined consumption: {0}.", string.Join(",", data.Keys));
+            logger.Debug("Cant find combined consumption: {0}.", string.Join(",", data.Keys));
             return null;
         }
 
@@ -612,12 +612,12 @@ namespace CarAdCrawler.MobileDe
                 }
                 else
                 {
-                    logger.WarnFormat("Cant parse urban consumption: {0}.", cons);
+                    logger.Warn("Cant parse urban consumption: {0}.", cons);
                     return null;
                 }
             }
 
-            logger.DebugFormat("Cant find urban consumption: {0}.", string.Join(",", data.Keys));
+            logger.Debug("Cant find urban consumption: {0}.", string.Join(",", data.Keys));
             return null;
         }
 
@@ -636,12 +636,12 @@ namespace CarAdCrawler.MobileDe
                 }
                 else
                 {
-                    logger.WarnFormat("Cant parse extra-urban consumption: {0}.", cons);
+                    logger.Warn("Cant parse extra-urban consumption: {0}.", cons);
                     return null;
                 }
             }
 
-            logger.DebugFormat("Cant find extra-urban consumption: {0}.", string.Join(",", data.Keys));
+            logger.Debug("Cant find extra-urban consumption: {0}.", string.Join(",", data.Keys));
             return null;
         }
 
@@ -660,12 +660,12 @@ namespace CarAdCrawler.MobileDe
                 }
                 else
                 {
-                    logger.WarnFormat("Cant parse co2 emission: {0}.", co2);
+                    logger.Warn("Cant parse co2 emission: {0}.", co2);
                     return null;
                 }
             }
 
-            logger.DebugFormat("Cant find co2 emission: {0}.", string.Join(",", data.Keys));
+            logger.Debug("Cant find co2 emission: {0}.", string.Join(",", data.Keys));
             return null;
         }
 
@@ -681,12 +681,12 @@ namespace CarAdCrawler.MobileDe
                 }
                 else
                 {
-                    logger.WarnFormat("Cant parse prev owner count: {0}.", po);
+                    logger.Warn("Cant parse prev owner count: {0}.", po);
                     return null;
                 }
             }
 
-            logger.DebugFormat("Cant find prev owner count: {0}.", string.Join(",", data.Keys));
+            logger.Debug("Cant find prev owner count: {0}.", string.Join(",", data.Keys));
             return null;
         }
 
@@ -702,12 +702,12 @@ namespace CarAdCrawler.MobileDe
                 }
                 else
                 {
-                    logger.WarnFormat("Cant parse MOT: {0}.", mot);
+                    logger.Warn("Cant parse MOT: {0}.", mot);
                     return null;
                 }
             }
 
-            logger.DebugFormat("Cant find MOT: {0}.", string.Join(",", data.Keys));
+            logger.Debug("Cant find MOT: {0}.", string.Join(",", data.Keys));
             return null;
         }
 
@@ -719,12 +719,12 @@ namespace CarAdCrawler.MobileDe
                 ExteriorColors? ret = ParseExteriorColor(color);
                 if (ret == null)
                 {
-                    logger.WarnFormat("Cant parse exterior color: {0}.", color);
+                    logger.Warn("Cant parse exterior color: {0}.", color);
                 }
                 return ret;
             }
 
-            logger.DebugFormat("Cant find exterior color: {0}.", string.Join(",", data.Keys));
+            logger.Debug("Cant find exterior color: {0}.", string.Join(",", data.Keys));
             return null;
         }
 
@@ -736,12 +736,12 @@ namespace CarAdCrawler.MobileDe
                 InteriorColors? ret = ParseInteriorColor(color);
                 if (ret == null)
                 {
-                    logger.WarnFormat("Cant parse interior color: {0}.", color);
+                    logger.Warn("Cant parse interior color: {0}.", color);
                 }
                 return ret;
             }
 
-            logger.DebugFormat("Cant find interior color: {0}.", string.Join(",", data.Keys));
+            logger.Debug("Cant find interior color: {0}.", string.Join(",", data.Keys));
             return null;
         }
 
@@ -753,12 +753,12 @@ namespace CarAdCrawler.MobileDe
                 InteriorDesigns? ret = ParseInteriorDesign(color);
                 if (ret == null)
                 {
-                    logger.WarnFormat("Cant parse interior design: {0}.", color);
+                    logger.Warn("Cant parse interior design: {0}.", color);
                 }
                 return ret;
             }
 
-            logger.DebugFormat("Cant find interior design: {0}.", string.Join(",", data.Keys));
+            logger.Debug("Cant find interior design: {0}.", string.Join(",", data.Keys));
             return null;
         }
 
@@ -773,7 +773,7 @@ namespace CarAdCrawler.MobileDe
                 return VATRate.MwStAusweisbar;
             }
 
-            logger.WarnFormat("Cant find VAT: {0}.", vat);
+            logger.Warn("Cant find VAT: {0}.", vat);
             return null;
         }
     }

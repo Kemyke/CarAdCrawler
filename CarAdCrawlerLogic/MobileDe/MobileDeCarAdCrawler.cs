@@ -9,15 +9,14 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web;
-using System.Data.Entity;
 using CarAdCrawler.Entities;
 using System.Linq.Expressions;
-using log4net;
 using System.Diagnostics;
 using Newtonsoft.Json;
+using Microsoft.EntityFrameworkCore;
+using NLog;
+using System.Net.Http;
 
-[assembly: log4net.Config.XmlConfigurator(Watch = true)]
 namespace CarAdCrawler.MobileDe
 {
     public class MobileDeCarAdCrawler
@@ -33,9 +32,10 @@ namespace CarAdCrawler.MobileDe
             List<Make> makes = new List<Make>();
             HtmlNode.ElementsFlags.Remove("option");
             HtmlDocument m = new HtmlDocument();
-            using (var wc = new System.Net.WebClient() { Encoding = Encoding.UTF8 })
+            using (var wc = new HttpClient())
             {
-                var html = wc.DownloadString(new Uri("http://www.mobile.de/svc/r/makes/Car"));
+                wc.DefaultRequestHeaders.AcceptCharset.ParseAdd("utf-8");
+                var html = wc.GetStringAsync(new Uri("http://www.mobile.de/svc/r/makes/Car")).GetAwaiter().GetResult();
 
                 dynamic dynObj = JsonConvert.DeserializeObject(html);
                 foreach(dynamic dynEl in dynObj.makes)
@@ -44,19 +44,20 @@ namespace CarAdCrawler.MobileDe
                 }
             }
 
-            logger.DebugFormat("Makes loaded!");
+            logger.Debug("Makes loaded!");
 
             return makes;
         }
 
         public void LoadModels(IEnumerable<Make> makes)
         {
-            using (var wc = new System.Net.WebClient() { Encoding = Encoding.UTF8 })
+            using (var wc = new HttpClient())
             {
+                wc.DefaultRequestHeaders.AcceptCharset.ParseAdd("utf-8");
                 foreach (var make in makes)
                 {
                     HtmlDocument m = new HtmlDocument();
-                    var html = wc.DownloadString(new Uri(string.Format("http://www.mobile.de/home/models.html?makeId={0}", make.MakeId)));
+                    var html = wc.GetStringAsync(new Uri(string.Format("http://www.mobile.de/home/models.html?makeId={0}", make.MakeId))).GetAwaiter().GetResult();
                     m.LoadHtml(html);
 
                     var loadedModels = m.DocumentNode.Descendants("option").ToList();
@@ -78,7 +79,7 @@ namespace CarAdCrawler.MobileDe
                 }
             }
 
-            logger.DebugFormat("Models loaded!");
+            logger.Debug("Models loaded!");
         }
 
         public void SaveMakesAndModels(IEnumerable<Make> makes)
@@ -90,10 +91,10 @@ namespace CarAdCrawler.MobileDe
                     if (!ctx.Makes.Any(m => m.MakeId == make.MakeId))
                     {
                         var newMake = ctx.Makes.Add(make);
-                        logger.InfoFormat("New make found: {0}.", newMake.Name);
-                        foreach(Model model in newMake.Models)
+                        logger.Info("New make found: {0}.", newMake.Entity.Name);
+                        foreach(Model model in newMake.Entity.Models)
                         {
-                            model.ParentId = newMake.Id;
+                            model.ParentId = newMake.Entity.Id;
                             ctx.Models.Add(model);
                         }
                     }
@@ -102,7 +103,7 @@ namespace CarAdCrawler.MobileDe
                         if(make.DeleteDate != null)
                         {
                             make.DeleteDate = null;
-                            logger.InfoFormat("Reactivated make found: {0}.", make.Name);
+                            logger.Info("Reactivated make found: {0}.", make.Name);
                         }
 
                         var me = ctx.Makes.Include(m => m.Models).Single(m => m.MakeId == make.MakeId);
@@ -111,14 +112,14 @@ namespace CarAdCrawler.MobileDe
                         foreach (var model in make.Models.Where(m => !db.Select(m2 => m2.ModelId).Contains(m.ModelId)))
                         {
                             me.Models.Add(model);
-                            logger.InfoFormat("New model found: {0}.", model.Name);
+                            logger.Info("New model found: {0}.", model.Name);
                         }
                         
                         foreach (var model in db.Where(m => m.DeleteDate != null))
                         {
                             if (make.Models.Select(m2 => m2.ModelId).Contains(model.ModelId))
                             {
-                                logger.InfoFormat("Ractivated model found: {0} - {1}.", make.Name, model.Name);
+                                logger.Info("Ractivated model found: {0} - {1}.", make.Name, model.Name);
                             }
                         }
 
@@ -127,7 +128,7 @@ namespace CarAdCrawler.MobileDe
                         {
                             var model = me.Models.Single(m => m.ModelId == modelId);
                             model.DeleteDate = DateTime.Now;
-                            logger.InfoFormat("Model deleted: {0}.", model.Name);
+                            logger.Info("Model deleted: {0}.", model.Name);
                         }
                     }
                     ctx.SaveChanges();
@@ -137,20 +138,20 @@ namespace CarAdCrawler.MobileDe
                 {
                     var make = ctx.Makes.Single(m => m.MakeId == makeId);
                     make.DeleteDate = DateTime.Now;
-                    logger.InfoFormat("Make deleted: {0}.", make.Name);
+                    logger.Info("Make deleted: {0}.", make.Name);
                 }
 
                 ctx.SaveChanges();
             }
 
-            logger.DebugFormat("Makes and models  saved!");
+            logger.Debug("Makes and models  saved!");
         }
 
-        private ILog logger;
+        private ILogger logger;
 
         private void CreateLogger()
         {
-            logger = LogManager.GetLogger(typeof(MobileDeCarAdCrawler));
+            logger = LogManager.GetLogger(typeof(MobileDeCarAdCrawler).Name);
         }
 
         public void CrawlForAdUpdate(Expression<Func<Make, bool>> makeFilter, Expression<Func<Model, bool>> modelFilter)
@@ -176,14 +177,14 @@ namespace CarAdCrawler.MobileDe
 
                             Console.WriteLine("{0}/{1} Refresh {2} {3} ad crawled! AdId: {4}.", num, allNum, make.Name, model.Name, ad.AdId);
 
-                            using (WebClient client = new WebClient())
+                            using (HttpClient client = new HttpClient())
                             {
-                                client.Encoding = Encoding.UTF8;
+                                client.DefaultRequestHeaders.AcceptCharset.ParseAdd("utf-8");
                                 HtmlDocument doc = new HtmlDocument();
                                 bool notFound = false;
                                 try
                                 {
-                                    string htmlCode = client.DownloadString(ad.URL);
+                                    string htmlCode = client.GetStringAsync(ad.URL).GetAwaiter().GetResult();
                                     doc.LoadHtml(htmlCode);
                                 }
                                 catch (WebException ex)
@@ -236,7 +237,7 @@ namespace CarAdCrawler.MobileDe
                     {
                         num = 0;
                         string s = string.Format("Model {0} started.", string.Concat(make.Name, " ", model.Name));
-                        logger.DebugFormat(s);
+                        logger.Debug(s);
                         Console.WriteLine(s);
 
                         Stopwatch sw = new Stopwatch();
@@ -251,16 +252,16 @@ namespace CarAdCrawler.MobileDe
 
                         if (result.ErrorOccurred)
                         {
-                            logger.InfoFormat("Crawl of {0} completed with error: {1}", result.RootUri.AbsoluteUri, result.ErrorException.Message);
+                            logger.Info("Crawl of {0} completed with error: {1}", result.RootUri.AbsoluteUri, result.ErrorException.Message);
                         }
                         else
                         {
-                            logger.InfoFormat("Crawl of {0} completed without error.", result.RootUri.AbsoluteUri);
+                            logger.Info("Crawl of {0} completed without error.", result.RootUri.AbsoluteUri);
                         }
                         sw.Stop();
 
                         s = string.Format("Model {0} finished. Time: {1}.", string.Concat(make.Name, " ", model.Name), sw.Elapsed);
-                        logger.DebugFormat(s);
+                        logger.Debug(s);
                         Console.WriteLine(s);
                     });
                 }
@@ -390,7 +391,7 @@ namespace CarAdCrawler.MobileDe
             }
             else
             {
-                logger.ErrorFormat("Strong not found! MainTechData: {0}.", mainTechData.InnerHtml);
+                logger.Error("Strong not found! MainTechData: {0}.", mainTechData.InnerHtml);
                 ret = new List<string>();
             }
             return ret;
@@ -419,7 +420,7 @@ namespace CarAdCrawler.MobileDe
             }
             else
             {
-                logger.ErrorFormat("No states found: {0}.", string.Join(",", cands));
+                logger.Error("No states found: {0}.", string.Join(",", cands));
             }
             return ret;
         }
@@ -459,7 +460,7 @@ namespace CarAdCrawler.MobileDe
             }
             else
             {
-                logger.ErrorFormat("No feature found: {0}.", string.Join(",", cands));
+                logger.Error("No feature found: {0}.", string.Join(",", cands));
             }
             return ret;
         }
@@ -500,7 +501,7 @@ namespace CarAdCrawler.MobileDe
             }
             else
             {
-                logger.DebugFormat("no technivalDetailsColumn found: {0}.", page.InnerHtml);
+                logger.Debug("no technivalDetailsColumn found: {0}.", page.InnerHtml);
             }
             return ret;
         }
@@ -511,9 +512,7 @@ namespace CarAdCrawler.MobileDe
             if (node != null)
             {
                 int ret;
-                string cc = node.InnerText.Trim();
-                int idx = cc.TakeWhile(c => !char.IsNumber(c)).Count();
-                cc = string.Concat(cc.Skip(idx).TakeWhile(c => !char.IsWhiteSpace(c)));
+                string cc = node.InnerText.Trim().Replace(".", "").Replace("cm³", "").Trim();
 
                 if (int.TryParse(cc, out ret))
                 {
@@ -521,12 +520,12 @@ namespace CarAdCrawler.MobileDe
                 }
                 else
                 {
-                    logger.WarnFormat("Cant parse CC: {0}.", cc);
+                    logger.Warn("Cant parse CC: {0}.", cc);
                     return null;
                 }
             }
 
-            logger.DebugFormat("Cant find CC: {0}", adId);
+            logger.Debug("Cant find CC: {0}", adId);
             return null;
         }
 
@@ -543,13 +542,13 @@ namespace CarAdCrawler.MobileDe
                 }
                 else
                 {
-                    logger.WarnFormat("Cant parse seats: {0}. Ad: {1}", seat, adId);
+                    logger.Warn("Cant parse seats: {0}. Ad: {1}", seat, adId);
                     return null;
                 }
             }
             else
             {
-                logger.DebugFormat("Cant find seats: {0}.", adId);
+                logger.Debug("Cant find seats: {0}.", adId);
                 return null;
             }
         }
@@ -564,13 +563,13 @@ namespace CarAdCrawler.MobileDe
 
                 if (ret == null)
                 {
-                    logger.WarnFormat("Cant parse doors: {0}. Ad: {1}", text, adId);
+                    logger.Warn("Cant parse doors: {0}. Ad: {1}", text, adId);
                 }
                 return ret;
             }
             else
             {
-                logger.DebugFormat("Cant find doors: {0}.", adId);
+                logger.Debug("Cant find doors: {0}.", adId);
                 return null;
             }
         }
@@ -585,13 +584,13 @@ namespace CarAdCrawler.MobileDe
 
                 if (ret == null)
                 {
-                    logger.WarnFormat("Cant parse emission class: {0}. Ad: {1}", text, adId);
+                    logger.Warn("Cant parse emission class: {0}. Ad: {1}", text, adId);
                 }
                 return ret;
             }
             else
             {
-                logger.DebugFormat("Cant find emission class: {0}.", adId);
+                logger.Debug("Cant find emission class: {0}.", adId);
                 return null;
             }
         }
@@ -606,13 +605,13 @@ namespace CarAdCrawler.MobileDe
 
                 if (ret == null)
                 {
-                    logger.WarnFormat("Cant parse emission sticker: {0}. Ad: {1}", text, adId);
+                    logger.Warn("Cant parse emission sticker: {0}. Ad: {1}", text, adId);
                 }
                 return ret;
             }
             else
             {
-                logger.DebugFormat("Cant find emission sticker: {0}.", adId);
+                logger.Debug("Cant find emission sticker: {0}.", adId);
                 return null;
             }
         }
@@ -627,13 +626,13 @@ namespace CarAdCrawler.MobileDe
 
                 if (ret == null)
                 {
-                    logger.WarnFormat("Cant parse exterior color: {0}. Ad: {1}", text, adId);
+                    logger.Warn("Cant parse exterior color: {0}. Ad: {1}", text, adId);
                 }
                 return ret;
             }
             else
             {
-                logger.DebugFormat("Cant find exterior color: {0}.", adId);
+                logger.Debug("Cant find exterior color: {0}.", adId);
                 return null;
             }
         }

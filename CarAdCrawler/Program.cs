@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web;
 using CarAdCrawler.Entities;
 using CarAdCrawler.MobileDe;
 using System.Diagnostics;
@@ -24,6 +23,12 @@ namespace CarAdCrawler
                 sw.Start();
 
                 MobileDeCarAdCrawler mobileCrawler = new MobileDeCarAdCrawler();
+
+                using (var ctx = new CarAdsContext())
+                {
+                    ctx.Database.EnsureCreated();
+                    ctx.SaveChanges();
+                }
 
                 Console.WriteLine("Load makes and models start.");
                 var makes = mobileCrawler.LoadMakes();
@@ -79,7 +84,7 @@ namespace CarAdCrawler
         {
             Dictionary<string, List<string>> ret = new Dictionary<string, List<string>>();
             string filter;
-            using (var streamReader = new StreamReader(@".\Filter.json", Encoding.UTF8))
+            using (var streamReader = File.OpenText(@".\Filter.json"))
             {
                 filter = streamReader.ReadToEnd();
             }

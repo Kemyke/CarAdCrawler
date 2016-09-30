@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
+using System;
 using System.Collections.Generic;
-using System.Data.Entity;
-using System.Data.Entity.ModelConfiguration.Conventions;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,7 +13,6 @@ namespace CarAdCrawler.Entities
         public CarAdsContext()
             : base()
         {
-            Database.SetInitializer<CarAdsContext>(new CarAdsInitializer());
         }
 
         public DbSet<Make> Makes { get; set; }
@@ -21,9 +20,19 @@ namespace CarAdCrawler.Entities
         public DbSet<Ad> Ads { get; set; }
         public DbSet<AdHistory> AdHistory { get; set; }
 
-        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            modelBuilder.Conventions.Remove<OneToManyCascadeDeleteConvention>();
+            optionsBuilder.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=CarAdCrawlerTest;Trusted_Connection=True;MultipleActiveResultSets=True;");
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
+            {
+                relationship.DeleteBehavior = DeleteBehavior.Restrict;
+            }
         }
     }
 }
