@@ -30,6 +30,22 @@ namespace CarAdCrawler
                     ctx.SaveChanges();
                 }
 
+                string connStr = @"Server=(localdb)\mssqllocaldb;Database=CarAdCrawlerTest;Trusted_Connection=True;MultipleActiveResultSets=True;";
+
+                var pe = new PopulateEnums();
+                pe.PopulateEnum(typeof(Fuel), connStr);
+                pe.PopulateEnum(typeof(Category), connStr);
+                pe.PopulateEnum(typeof(Doors), connStr);
+                pe.PopulateEnum(typeof(EmissionClasses), connStr);
+                pe.PopulateEnum(typeof(EmissionStickers), connStr);
+                pe.PopulateEnum(typeof(Feature), connStr);
+                pe.PopulateEnum(typeof(GearBox), connStr);
+                pe.PopulateEnum(typeof(InteriorColors), connStr);
+                pe.PopulateEnum(typeof(InteriorDesigns), connStr);
+                pe.PopulateEnum(typeof(SellerType), connStr);
+                pe.PopulateEnum(typeof(State), connStr);
+                pe.PopulateEnum(typeof(VATRate), connStr);
+
                 Console.WriteLine("Load makes and models start.");
                 var makes = mobileCrawler.LoadMakes();
                 mobileCrawler.LoadModels(makes);
