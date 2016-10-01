@@ -12,6 +12,7 @@ namespace CarAdCrawler
 {
     public class PopulateEnums
     {
+        private const string checkLiteralScript = @"select Name from Enum_{0} where Id = {1}";
         private const string createSeq = @"DO
                                             $$
                                             BEGIN
