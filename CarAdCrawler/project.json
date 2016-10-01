@@ -4,10 +4,10 @@
       "target": "project"
     },
     "Microsoft.EntityFrameworkCore": "1.0.1",
-    "Newtonsoft.Json": "9.0.1"
+    "Newtonsoft.Json": "9.0.1",
+    "System.Data.SqlClient": "4.1.0"
   },
   "frameworks": {
-    "net46": {},
     "netcoreapp1.0": {
       "imports": [ "dnxcore50", "portable-net45+win8" ]
     }

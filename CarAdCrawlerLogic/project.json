@@ -11,26 +11,12 @@
     "Microsoft.Extensions.Configuration": "1.0.0",
     "Microsoft.Extensions.Configuration.Json": "1.0.0",
     "system.net.http.winhttphandler": "4.0.0",
-    "Microsoft.EntityFrameworkCore.SqlServer": "1.0.1"
+    "Npgsql.EntityFrameworkCore.PostgreSQL": "1.0.2"
   },
   "frameworks": {
-    "net46": {
-      "frameworkAssemblies": {
-        "System.Configuration": "4.0.0.0",
-        "System.Net.Http": "4.0.0.0"
-      },
-      "dependencies": {
-        "Microsoft.Net.Http": "2.2.22"
-      }
-    },
     "netcoreapp1.0": {
       "imports": [ "dnxcore50", "portable-net45+win8" ],
       "dependencies": {
-        "Microsoft.NETCore.App": "1.0.1",
-        "NETStandard.Library": "1.6.0",
-        "Microsoft.CSharp": "4.0.1",
-        "System.Dynamic.Runtime": "4.0.11",
-        "System.Net.Http": "4.1.0"
       }
     }
   }

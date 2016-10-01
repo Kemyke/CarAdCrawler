@@ -22,7 +22,7 @@ namespace CarAdCrawler.Entities
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=CarAdCrawlerTest;Trusted_Connection=True;MultipleActiveResultSets=True;");
+            optionsBuilder.UseNpgsql("dummy");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

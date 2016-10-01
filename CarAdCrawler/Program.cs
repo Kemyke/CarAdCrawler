@@ -30,7 +30,7 @@ namespace CarAdCrawler
                     ctx.SaveChanges();
                 }
 
-                string connStr = @"Server=(localdb)\mssqllocaldb;Database=CarAdCrawlerTest;Trusted_Connection=True;MultipleActiveResultSets=True;";
+                string connStr = @"dummy";
 
                 var pe = new PopulateEnums();
                 pe.PopulateEnum(typeof(Fuel), connStr);
