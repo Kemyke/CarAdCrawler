@@ -21,37 +21,55 @@ namespace CarAdCrawler
         {
             try
             {
+                var builder = new ConfigurationBuilder();
+                builder.AddJsonFile(@"./appsettings.json");
+                var init = builder.Build().GetSection("init");
+                
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
 
                 MobileDeCarAdCrawler mobileCrawler = new MobileDeCarAdCrawler();
 
-                using (var ctx = new CarAdsContext())
+                if (bool.Parse(init["EnsureDbCreated"]))
                 {
-                    ctx.Database.EnsureCreated();
-                    ctx.SaveChanges();
+                    Console.WriteLine("Ensure db created");
+
+                    using (var ctx = new CarAdsContext())
+                    {
+                        ctx.Database.EnsureCreated();
+                        ctx.SaveChanges();
+                    }
                 }
 
-                string connStr = ConnectionReader.AdDb;
-                var pe = new PopulateEnums();
-                pe.PopulateEnum(typeof(Fuel), connStr);
-                pe.PopulateEnum(typeof(Category), connStr);
-                pe.PopulateEnum(typeof(Doors), connStr);
-                pe.PopulateEnum(typeof(EmissionClasses), connStr);
-                pe.PopulateEnum(typeof(EmissionStickers), connStr);
-                pe.PopulateEnum(typeof(Feature), connStr);
-                pe.PopulateEnum(typeof(GearBox), connStr);
-                pe.PopulateEnum(typeof(InteriorColors), connStr);
-                pe.PopulateEnum(typeof(InteriorDesigns), connStr);
-                pe.PopulateEnum(typeof(SellerType), connStr);
-                pe.PopulateEnum(typeof(State), connStr);
-                pe.PopulateEnum(typeof(VATRate), connStr);
+                if (bool.Parse(init["PopulateEnums"]))
+                {
+                    string connStr = ConnectionReader.AdDb;
 
-                Console.WriteLine("Load makes and models start.");
-                var makes = mobileCrawler.LoadMakes();
-                mobileCrawler.LoadModels(makes);
-                mobileCrawler.SaveMakesAndModels(makes);
-                Console.WriteLine("Load makes and models end. {0}", sw.Elapsed);
+                    Console.WriteLine("Populate enums if needed");
+
+                    var pe = new PopulateEnums();
+                    pe.PopulateEnum(typeof(Fuel), connStr);
+                    pe.PopulateEnum(typeof(Category), connStr);
+                    pe.PopulateEnum(typeof(Doors), connStr);
+                    pe.PopulateEnum(typeof(EmissionClasses), connStr);
+                    pe.PopulateEnum(typeof(EmissionStickers), connStr);
+                    pe.PopulateEnum(typeof(Feature), connStr);
+                    pe.PopulateEnum(typeof(GearBox), connStr);
+                    pe.PopulateEnum(typeof(InteriorColors), connStr);
+                    pe.PopulateEnum(typeof(InteriorDesigns), connStr);
+                    pe.PopulateEnum(typeof(SellerType), connStr);
+                    pe.PopulateEnum(typeof(State), connStr);
+                    pe.PopulateEnum(typeof(VATRate), connStr);
+                }
+
+                if (bool.Parse(init["SaveMakesAndModels"]))
+                {
+                    Console.WriteLine("Load makes and models start.");
+                    var makes = mobileCrawler.LoadMakes();
+                    mobileCrawler.LoadModels(makes);
+                    mobileCrawler.SaveMakesAndModels(makes);
+                    Console.WriteLine("Load makes and models end. {0}", sw.Elapsed);
+                }
 
                 var filter = LoadConfig();
 

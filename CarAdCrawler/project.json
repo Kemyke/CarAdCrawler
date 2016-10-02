@@ -22,6 +22,6 @@
     "copyToOutput": [ "appsettings.json", "NLog.config", "Configs/connection.json", "Configs/filter.json" ]
   },
   "publishOptions": {
-    "include": [ "Configs" ]
+    "include": [ "Configs", "appsettings.json", "NLog.config" ]
   }
 }

@@ -38,7 +38,7 @@ namespace CarAdCrawler.MobileDe
                 var html = wc.GetStringAsync(new Uri("http://www.mobile.de/svc/r/makes/Car")).GetAwaiter().GetResult();
 
                 dynamic dynObj = JsonConvert.DeserializeObject(html);
-                foreach(dynamic dynEl in dynObj.makes)
+                foreach (dynamic dynEl in dynObj.makes)
                 {
                     makes.Add(new Make() { MakeId = dynEl.i, Name = dynEl.n, CreateDate = DateTime.Now, Models = new List<Model>() });
                 }
@@ -92,7 +92,7 @@ namespace CarAdCrawler.MobileDe
                     {
                         var newMake = ctx.Makes.Add(make);
                         logger.Info("New make found: {0}.", newMake.Entity.Name);
-                        foreach(Model model in newMake.Entity.Models)
+                        foreach (Model model in newMake.Entity.Models)
                         {
                             model.ParentId = newMake.Entity.Id;
                             ctx.Models.Add(model);
@@ -100,7 +100,7 @@ namespace CarAdCrawler.MobileDe
                     }
                     else
                     {
-                        if(make.DeleteDate != null)
+                        if (make.DeleteDate != null)
                         {
                             make.DeleteDate = null;
                             logger.Info("Reactivated make found: {0}.", make.Name);
@@ -114,7 +114,7 @@ namespace CarAdCrawler.MobileDe
                             me.Models.Add(model);
                             logger.Info("New model found: {0}.", model.Name);
                         }
-                        
+
                         foreach (var model in db.Where(m => m.DeleteDate != null))
                         {
                             if (make.Models.Select(m2 => m2.ModelId).Contains(model.ModelId))
@@ -163,10 +163,10 @@ namespace CarAdCrawler.MobileDe
                 {
                     foreach (var model in ctx.Models.Where(modelFilter).ToList())
                     {
-                        var ads = ctx.Ads.Where(a=>a.MakeId == make.Id && a.ModelId == model.Id && a.DeleteDate == null).OrderBy(a=>a.RefreshDate).ToList();
+                        var ads = ctx.Ads.Where(a => a.MakeId == make.Id && a.ModelId == model.Id && a.DeleteDate == null).OrderBy(a => a.RefreshDate).ToList();
                         var allNum = ads.Count;
                         var num = 0;
-                        foreach(var ad in ads)
+                        foreach (var ad in ads)
                         {
                             num++;
                             if (ad.RefreshDate.HasValue && (now - ad.RefreshDate.Value).TotalDays < 1)
@@ -212,7 +212,7 @@ namespace CarAdCrawler.MobileDe
                                 {
                                     //Ad removed
                                     ad.DeleteDate = DateTime.Now;
-                                    ctx.SaveChanges();                                    
+                                    ctx.SaveChanges();
                                 }
                                 else
                                 {
@@ -220,7 +220,7 @@ namespace CarAdCrawler.MobileDe
                                     ad.RefreshDate = DateTime.Now;
                                     ctx.SaveChanges();
                                 }
-                            } 
+                            }
                         }
                     }
                 }
@@ -229,11 +229,24 @@ namespace CarAdCrawler.MobileDe
 
         public void CrawlForNewAds(Expression<Func<Make, bool>> makeFilter, Expression<Func<Model, bool>> modelFilter)
         {
+            List<Make> makes;
+
             using (var ctx = new CarAdsContext())
             {
-                foreach (var make in ctx.Makes.Where(makeFilter))
+                makes = ctx.Makes.Where(makeFilter).ToList();
+            }
+            foreach (var make in makes)
+            {
+
+                List<Model> models;
+                using (var ctx = new CarAdsContext())
                 {
-                    Parallel.ForEach(ctx.Models.Where(m => m.ParentId == make.Id).Where(modelFilter), model =>
+                    models = ctx.Models.Where(m => m.ParentId == make.Id).Where(modelFilter).ToList();
+                }
+
+                Parallel.ForEach(models, model =>
+                {
+                    try
                     {
                         num = 0;
                         string s = string.Format("Model {0} started.", string.Concat(make.Name, " ", model.Name));
@@ -245,7 +258,7 @@ namespace CarAdCrawler.MobileDe
                         PoliteWebCrawler crawler = new PoliteWebCrawler(null, new MobileDeNewAdDecisionMaker(make, model), null, null, null, null, null, null, null);
 
                         crawler.CrawlBag = new { make, model };
-                        crawler.PageCrawlCompletedAsync += crawler_ProcessPageCrawlCompleted;
+                        crawler.PageCrawlCompleted += crawler_ProcessPageCrawlCompleted;
 
                         string url = string.Format("http://suchen.mobile.de/auto/{0}-{1}.html?isSearchRequest=true&scopeId=C&sortOption.sortBy=price.consumerGrossEuro&makeModelVariant1.makeId={2}&makeModelVariant1.modelId={3}", make.Name, model.Name, make.MakeId, model.ModelId);
                         var result = crawler.Crawl(new Uri(url));
@@ -263,10 +276,15 @@ namespace CarAdCrawler.MobileDe
                         s = string.Format("Model {0} finished. Time: {1}.", string.Concat(make.Name, " ", model.Name), sw.Elapsed);
                         logger.Debug(s);
                         Console.WriteLine(s);
-                    });
-                }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex);
+                    }
+                });
             }
         }
+    
 
         private Ad CreateAd(string id, Make make, Model model)
         {
