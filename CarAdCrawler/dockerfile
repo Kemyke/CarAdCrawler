@@ -1,0 +1,9 @@
+﻿FROM centos:7
+
+COPY . /CarAdCrawler
+
+WORKDIR /CarAdCrawler
+
+RUN chmod +x CarAdCrawler
+
+ENTRYPOINT ./CarAdCrawler

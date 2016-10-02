@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using CarAdCrawlerLogic;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -16,10 +17,7 @@ namespace CarAdCrawler.Entities
         public CarAdsContext()
             : base()
         {
-            var builder = new ConfigurationBuilder();
-            builder.AddJsonFile("appsettings.json");
-            var cr = builder.Build();
-            connStr = cr.GetConnectionString("AdDb");
+            connStr = ConnectionReader.AdDb;
         }
 
         public DbSet<Make> Makes { get; set; }

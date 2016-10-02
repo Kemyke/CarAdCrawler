@@ -19,6 +19,6 @@
   },
   "buildOptions": {
     "emitEntryPoint": true,
-    "copyToOutput": ["appsettings.json", "Filter.json", "NLog.config" ]
+    "copyToOutput": ["appsettings.json", "NLog.config", "Configs\\connection.json", "Configs\\filter.json" ]
   }
 }
