@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,9 +11,15 @@ namespace CarAdCrawler.Entities
 {
     public class CarAdsContext : DbContext
     {
+        private string connStr;
+
         public CarAdsContext()
             : base()
         {
+            var builder = new ConfigurationBuilder();
+            builder.AddJsonFile("appsettings.json");
+            var cr = builder.Build();
+            connStr = cr.GetConnectionString("AdDb");
         }
 
         public DbSet<Make> Makes { get; set; }
@@ -22,7 +29,7 @@ namespace CarAdCrawler.Entities
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseNpgsql("dummy");
+            optionsBuilder.UseNpgsql(connStr);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -10,6 +10,7 @@ using CarAdCrawler.MobileDe;
 using System.Diagnostics;
 using System.IO;
 using Newtonsoft.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace CarAdCrawler
 {
@@ -19,6 +20,11 @@ namespace CarAdCrawler
         {
             try
             {
+                var builder = new ConfigurationBuilder();
+                builder.AddJsonFile("appsettings.json");
+                var cr = builder.Build();
+                string connStr = cr.GetConnectionString("AdDb");
+
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
 
@@ -29,8 +35,6 @@ namespace CarAdCrawler
                     ctx.Database.EnsureCreated();
                     ctx.SaveChanges();
                 }
-
-                string connStr = @"dummy";
 
                 var pe = new PopulateEnums();
                 pe.PopulateEnum(typeof(Fuel), connStr);
