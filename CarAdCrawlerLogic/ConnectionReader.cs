@@ -11,7 +11,7 @@ namespace CarAdCrawlerLogic
         static ConnectionReader()
         {
             var builder = new ConfigurationBuilder();
-            builder.AddJsonFile(@"Configs\connection.json");
+            builder.AddJsonFile(@"./Configs/connection.json");
             var cr = builder.Build();
             AdDb = cr.GetConnectionString("AdDb");
         }

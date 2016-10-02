@@ -101,7 +101,7 @@ namespace CarAdCrawler
         {
             Dictionary<string, List<string>> ret = new Dictionary<string, List<string>>();
             string filter;
-            using (var streamReader = File.OpenText(@".\Configs\filter.json"))
+            using (var streamReader = File.OpenText(@"./Configs/filter.json"))
             {
                 filter = streamReader.ReadToEnd();
             }
