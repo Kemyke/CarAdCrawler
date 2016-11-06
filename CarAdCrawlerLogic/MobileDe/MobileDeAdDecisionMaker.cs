@@ -11,58 +11,63 @@ namespace CarAdCrawler.MobileDe
 {
     public class MobileDeNewAdDecisionMaker : ICrawlDecisionMaker
     {
-            private Make make;
-            private Model model;
+        private Make make;
+        private Model model;
 
-            public MobileDeNewAdDecisionMaker(Make me, Model moe)
-            { 
-                make = me; 
-                model = moe; 
-            }
+        public MobileDeNewAdDecisionMaker(Make me, Model moe)
+        {
+            make = me;
+            model = moe;
+        }
 
-            public CrawlDecision ShouldCrawlPage(PageToCrawl pageToCrawl, CrawlContext crawlContext)
+        public CrawlDecision ShouldCrawlPage(PageToCrawl pageToCrawl, CrawlContext crawlContext)
+        {
+            CrawlDecision ret;
+            bool isAd = pageToCrawl.Uri.ToString().ToLower().Contains("details.html");
+            isAd &= pageToCrawl.Uri.Query.ToString().Contains("makeId=" + make.MakeId);
+            isAd &= pageToCrawl.Uri.Query.ToString().Contains("modelId=" + model.ModelId);
+
+            bool isList = pageToCrawl.Uri.ToString().ToLower().Contains(string.Format("{0}-{1}.html", make.Name.ToLower().Replace(" ", "-"), model.Name.ToLower().Replace(" ", "-")));
+            isList |= pageToCrawl.Uri.ToString().ToLower().Contains("search.html") && pageToCrawl.Uri.ToString().ToLower().Contains("pagenumber");
+
+            if (isList || crawlContext.CrawledCount == 0)
             {
-                CrawlDecision ret;
-                bool isAd = pageToCrawl.Uri.ToString().ToLower().Contains("details.html");
-                bool isList = pageToCrawl.Uri.ToString().ToLower().Contains(string.Format("{0}-{1}.html", make.Name.ToLower().Replace(" ", "-"), model.Name.ToLower().Replace(" ", "-"))) && pageToCrawl.Uri.ToString().ToLower().Contains("pagenumber");
-                if (isList || crawlContext.CrawledCount == 0)
+                ret = new CrawlDecision() { Allow = true };
+            }
+            else if (isAd)
+            {
+                using (var ctx = new CarAdsContext())
                 {
-                    ret = new CrawlDecision() { Allow = true };
+                    int s = pageToCrawl.Uri.Query.IndexOf("id=") + 3;
+                    int e = pageToCrawl.Uri.Query.IndexOf("&", s);
+                    string id = pageToCrawl.Uri.Query.Substring(s, e - s);
+                    bool isKnown = ctx.Ads.Where(a => a.AdId == id).Any();
+                    bool allow = !isKnown;
+                    ret = new CrawlDecision() { Allow = allow, Reason = allow ? null : "isKnown" };
                 }
-                else if (isAd)
-                {
-                    using (var ctx = new CarAdsContext())
-                    {
-                        int s = pageToCrawl.Uri.Query.IndexOf("id=") + 3;
-                        int e = pageToCrawl.Uri.Query.IndexOf("&", s);
-                        string id = pageToCrawl.Uri.Query.Substring(s, e - s);
-                        bool isKnown = ctx.Ads.Where(a => a.AdId == id).Any();
-                        bool allow = !isKnown;
-                        ret = new CrawlDecision() { Allow = allow, Reason = allow ? null : "isKnown" };
-                    }
-                }
-                else
-                {
-                    ret = new CrawlDecision() { Allow = false, Reason = "Not ad, not list" };
-                }
-
-                return ret;
             }
-
-            public CrawlDecision ShouldCrawlPageLinks(CrawledPage crawledPage, CrawlContext crawlContext)
+            else
             {
-                bool isAd = crawledPage.Uri.ToString().Contains("auto-inserat");
-                return new CrawlDecision() { Allow = !isAd, Reason = !isAd ? null : "IsAd" };
+                ret = new CrawlDecision() { Allow = false, Reason = "Not ad, not list" };
             }
 
-            public CrawlDecision ShouldDownloadPageContent(CrawledPage crawledPage, CrawlContext crawlContext)
-            {
-                return new CrawlDecision() { Allow = true };
-            }
+            return ret;
+        }
 
-            public CrawlDecision ShouldRecrawlPage(CrawledPage crawledPage, CrawlContext crawlContext)
-            {
-                return new CrawlDecision() { Allow = false };
-            }
+        public CrawlDecision ShouldCrawlPageLinks(CrawledPage crawledPage, CrawlContext crawlContext)
+        {
+            bool isAd = crawledPage.Uri.ToString().Contains("auto-inserat");
+            return new CrawlDecision() { Allow = !isAd, Reason = !isAd ? null : "IsAd" };
+        }
+
+        public CrawlDecision ShouldDownloadPageContent(CrawledPage crawledPage, CrawlContext crawlContext)
+        {
+            return new CrawlDecision() { Allow = true };
+        }
+
+        public CrawlDecision ShouldRecrawlPage(CrawledPage crawledPage, CrawlContext crawlContext)
+        {
+            return new CrawlDecision() { Allow = false };
+        }
     }
 }

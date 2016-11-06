@@ -2,19 +2,16 @@
 
   "dependencies": {
     "Microsoft.EntityFrameworkCore": "1.0.1",
-    "AbotCore": "0.1.9-alpha1",
-    "AutoMapper": "5.1.1",
-    "AngleSharp": "0.9.8.1",
+    "AbotCore": "0.1.11-beta",
     "NLog": "4.4.0-betaV15",
-    "HtmlAgilityPack": "1.4.9.5",
-    "NRobotsCore": "1.1.1-alpha1",
     "Microsoft.Extensions.Configuration": "1.0.0",
     "Microsoft.Extensions.Configuration.Json": "1.0.0",
     "system.net.http.winhttphandler": "4.0.0",
-    "Npgsql.EntityFrameworkCore.PostgreSQL": "1.0.2"
+    "Npgsql.EntityFrameworkCore.PostgreSQL": "1.0.2",
+    "System.Threading.Tasks.Parallel": "4.0.1"
   },
   "frameworks": {
-    "netcoreapp1.0": {
+    "netstandard1.6": {
       "imports": [ "dnxcore50", "portable-net45+win8" ],
       "dependencies": {
       }

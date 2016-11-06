@@ -261,7 +261,7 @@ namespace CarAdCrawler.MobileDe
                         crawler.PageCrawlCompleted += crawler_ProcessPageCrawlCompleted;
 
                         string url = string.Format("http://suchen.mobile.de/auto/{0}-{1}.html?isSearchRequest=true&scopeId=C&sortOption.sortBy=price.consumerGrossEuro&makeModelVariant1.makeId={2}&makeModelVariant1.modelId={3}", make.Name, model.Name, make.MakeId, model.ModelId);
-                        var result = crawler.Crawl(new Uri(url));
+                        var result = crawler.CrawlAsync(new Uri(url)).GetAwaiter().GetResult();
 
                         if (result.ErrorOccurred)
                         {
@@ -784,7 +784,7 @@ namespace CarAdCrawler.MobileDe
                     {
                         pagenum = "1";
                     }
-                    
+
 
                     Console.WriteLine("{0} {1} list page {2} crawled.", make.Name, model.Name, pagenum);
                 }
@@ -794,7 +794,7 @@ namespace CarAdCrawler.MobileDe
 
             Console.WriteLine("New {0} {1} ad crawled! Num: {2}.", make.Name, model.Name, ++num);
 
-            if (crawledPage.WebException != null || crawledPage.HttpWebResponse.StatusCode != HttpStatusCode.OK)
+            if (crawledPage.HttpRequestException != null || crawledPage.HttpWebResponse.StatusCode != HttpStatusCode.OK)
             {
                 logger.Info(string.Format("Crawl of page failed {0}", crawledPage.Uri.AbsoluteUri));
             }
