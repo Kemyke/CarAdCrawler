@@ -27,8 +27,9 @@ namespace CarAdCrawler.MobileDe
             isAd &= pageToCrawl.Uri.Query.ToString().Contains("makeId=" + make.MakeId);
             isAd &= pageToCrawl.Uri.Query.ToString().Contains("modelId=" + model.ModelId);
 
-            bool isList = pageToCrawl.Uri.ToString().ToLower().Contains(string.Format("{0}-{1}.html", make.Name.ToLower().Replace(" ", "-"), model.Name.ToLower().Replace(" ", "-")));
-            isList |= pageToCrawl.Uri.ToString().ToLower().Contains("search.html") && pageToCrawl.Uri.ToString().ToLower().Contains("pagenumber");
+            bool isList = pageToCrawl.Uri.ToString().ToLower().Contains("search.html") && pageToCrawl.Uri.ToString().ToLower().Contains("pagenumber");
+            isList &= pageToCrawl.Uri.Query.ToString().Contains("makeId=" + make.MakeId);
+            isList &= pageToCrawl.Uri.Query.ToString().Contains("modelId=" + model.ModelId);
 
             if (isList || crawlContext.CrawledCount == 0)
             {

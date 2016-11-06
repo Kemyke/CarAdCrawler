@@ -2,7 +2,7 @@
 
   "dependencies": {
     "Microsoft.EntityFrameworkCore": "1.0.1",
-    "AbotCore": "0.1.11-beta",
+    "AbotCore": "0.1.12-beta",
     "NLog": "4.4.0-betaV15",
     "Microsoft.Extensions.Configuration": "1.0.0",
     "Microsoft.Extensions.Configuration.Json": "1.0.0",

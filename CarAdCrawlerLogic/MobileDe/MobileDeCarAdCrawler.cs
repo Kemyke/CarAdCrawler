@@ -259,7 +259,8 @@ namespace CarAdCrawler.MobileDe
                         crawler.CrawlBag = new { make, model };
                         crawler.PageCrawlCompleted += crawler_ProcessPageCrawlCompleted;
 
-                        string url = string.Format("http://suchen.mobile.de/auto/{0}-{1}.html?isSearchRequest=true&scopeId=C&sortOption.sortBy=price.consumerGrossEuro&makeModelVariant1.makeId={2}&makeModelVariant1.modelId={3}", make.Name, model.Name, make.MakeId, model.ModelId);
+                        string url = string.Format("http://suchen.mobile.de/auto/search.html?makeModelVariant1.makeId={0}&makeModelVariant1.modelId={1}&isSearchRequest=true&pageNumber=1", make.MakeId, model.ModelId);
+                        
                         var result = crawler.CrawlAsync(new Uri(url)).GetAwaiter().GetResult();
 
                         if (result.ErrorOccurred)
