@@ -12,15 +12,20 @@ using System.IO;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Configuration;
 using CarAdCrawlerLogic;
+using NLog;
 
 namespace CarAdCrawler
 {
     class Program
     {
+        private static ILogger logger;
+
         static void Main(string[] args)
         {
             try
             {
+                logger = LogManager.GetLogger(typeof(Program).Name);
+
                 var builder = new ConfigurationBuilder();
                 builder.AddJsonFile(@"./appsettings.json");
                 var init = builder.Build().GetSection("init");
@@ -32,7 +37,7 @@ namespace CarAdCrawler
 
                 if (bool.Parse(init["EnsureDbCreated"]))
                 {
-                    Console.WriteLine("Ensure db created");
+                    logger.Debug("Ensure db created");
 
                     using (var ctx = new CarAdsContext())
                     {
@@ -45,7 +50,7 @@ namespace CarAdCrawler
                 {
                     string connStr = ConnectionReader.AdDb;
 
-                    Console.WriteLine("Populate enums if needed");
+                    logger.Debug("Populate enums if needed");
 
                     var pe = new PopulateEnums();
                     pe.PopulateEnum(typeof(Fuel), connStr);
@@ -64,43 +69,43 @@ namespace CarAdCrawler
 
                 if (bool.Parse(init["SaveMakesAndModels"]))
                 {
-                    Console.WriteLine("Load makes and models start.");
+                    logger.Debug("Load makes and models start.");
                     var makes = mobileCrawler.LoadMakes();
                     mobileCrawler.LoadModels(makes);
                     mobileCrawler.SaveMakesAndModels(makes);
-                    Console.WriteLine("Load makes and models end. {0}", sw.Elapsed);
+                    logger.Debug("Load makes and models end. {0}", sw.Elapsed);
                 }
 
                 var filter = LoadConfig();
-
+                List<Task> tasks = new List<Task>();
                 foreach (var kvp in filter)
                 {
                     foreach (var model in kvp.Value)
                     {
-                        Task.Run(() =>
+                        var newTask = Task.Run(() =>
                         {
-                            Console.WriteLine("Searching for new ad started: {0} {1}", kvp.Key, model);
+                            logger.Debug("Searching for new ad started: {0} {1}", kvp.Key, model);
                             mobileCrawler.CrawlForNewAds(m => m.Name == kvp.Key, m => m.Name == model);
                         });
 
-                        Task.Run(() =>
+                        var updateTask = Task.Run(() =>
                         {
-                            Console.WriteLine("Searching for update started: {0} {1}", kvp.Key, model);
+                            logger.Debug("Searching for update started: {0} {1}", kvp.Key, model);
                             mobileCrawler.CrawlForAdUpdate(m => m.Name == kvp.Key, m => m.Name == model);
                         });
+
+                        tasks.Add(newTask);
+                        tasks.Add(updateTask);
                     }
                 }
 
+                Task.WaitAll(tasks.ToArray());
                 sw.Stop();
-                Console.WriteLine("Completed! {0}", sw.Elapsed);
+                logger.Debug("Completed! {0}", sw.Elapsed);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: {0}", ex.ToString());
-            }
-            finally
-            {
-                Console.ReadLine();
+                logger.Debug("Error: {0}", ex.ToString());
             }
         }
 

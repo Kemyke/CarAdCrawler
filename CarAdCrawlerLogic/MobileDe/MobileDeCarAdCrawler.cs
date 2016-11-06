@@ -171,11 +171,11 @@ namespace CarAdCrawler.MobileDe
                             num++;
                             if (ad.RefreshDate.HasValue && (now - ad.RefreshDate.Value).TotalDays < 1)
                             {
-                                Console.WriteLine("{0}/{1} Ad {2}, {3} {4} fresh enough.", num, allNum, ad.AdId, make.Name, model.Name);
+                                logger.Debug("{0}/{1} Ad {2}, {3} {4} fresh enough.", num, allNum, ad.AdId, make.Name, model.Name);
                                 continue;
                             }
 
-                            Console.WriteLine("{0}/{1} Refresh {2} {3} ad crawled! AdId: {4}.", num, allNum, make.Name, model.Name, ad.AdId);
+                            logger.Debug("{0}/{1} Refresh {2} {3} ad crawled! AdId: {4}.", num, allNum, make.Name, model.Name, ad.AdId);
 
                             using (HttpClient client = new HttpClient())
                             {
@@ -251,7 +251,6 @@ namespace CarAdCrawler.MobileDe
                         num = 0;
                         string s = string.Format("Model {0} started.", string.Concat(make.Name, " ", model.Name));
                         logger.Debug(s);
-                        Console.WriteLine(s);
 
                         Stopwatch sw = new Stopwatch();
                         sw.Start();
@@ -275,7 +274,6 @@ namespace CarAdCrawler.MobileDe
 
                         s = string.Format("Model {0} finished. Time: {1}.", string.Concat(make.Name, " ", model.Name), sw.Elapsed);
                         logger.Debug(s);
-                        Console.WriteLine(s);
                     }
                     catch (Exception ex)
                     {
@@ -786,13 +784,13 @@ namespace CarAdCrawler.MobileDe
                     }
 
 
-                    Console.WriteLine("{0} {1} list page {2} crawled.", make.Name, model.Name, pagenum);
+                    logger.Debug("{0} {1} list page {2} crawled.", make.Name, model.Name, pagenum);
                 }
 
                 return;
             }
 
-            Console.WriteLine("New {0} {1} ad crawled! Num: {2}.", make.Name, model.Name, ++num);
+            logger.Debug("New {0} {1} ad crawled! Num: {2}.", make.Name, model.Name, ++num);
 
             if (crawledPage.HttpRequestException != null || crawledPage.HttpWebResponse.StatusCode != HttpStatusCode.OK)
             {
