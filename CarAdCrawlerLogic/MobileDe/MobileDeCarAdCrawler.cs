@@ -154,7 +154,7 @@ namespace CarAdCrawler.MobileDe
             logger = LogManager.GetLogger(typeof(MobileDeCarAdCrawler).Name);
         }
 
-        public void CrawlForAdUpdate(Expression<Func<Make, bool>> makeFilter, Expression<Func<Model, bool>> modelFilter)
+        public async Task CrawlForAdUpdate(Expression<Func<Make, bool>> makeFilter, Expression<Func<Model, bool>> modelFilter)
         {
             DateTime now = DateTime.Now;
             using (var ctx = new CarAdsContext())
@@ -184,7 +184,7 @@ namespace CarAdCrawler.MobileDe
                                 bool notFound = false;
                                 try
                                 {
-                                    string htmlCode = client.GetStringAsync(ad.URL).GetAwaiter().GetResult();
+                                    string htmlCode = await client.GetStringAsync(ad.URL);
                                     doc.LoadHtml(htmlCode);
                                 }
                                 catch (WebException ex)
@@ -227,7 +227,7 @@ namespace CarAdCrawler.MobileDe
             }
         }
 
-        public void CrawlForNewAds(Expression<Func<Make, bool>> makeFilter, Expression<Func<Model, bool>> modelFilter)
+        public async Task CrawlForNewAds(Expression<Func<Make, bool>> makeFilter, Expression<Func<Model, bool>> modelFilter)
         {
             List<Make> makes;
 
@@ -244,7 +244,7 @@ namespace CarAdCrawler.MobileDe
                     models = ctx.Models.Where(m => m.ParentId == make.Id).Where(modelFilter).ToList();
                 }
 
-                Parallel.ForEach(models, model =>
+                Parallel.ForEach(models, async (model) =>
                 {
                     try
                     {
@@ -261,7 +261,7 @@ namespace CarAdCrawler.MobileDe
 
                         string url = string.Format("http://suchen.mobile.de/auto/search.html?makeModelVariant1.makeId={0}&makeModelVariant1.modelId={1}&isSearchRequest=true&pageNumber=1", make.MakeId, model.ModelId);
                         
-                        var result = crawler.CrawlAsync(new Uri(url)).GetAwaiter().GetResult();
+                        var result = await crawler.CrawlAsync(new Uri(url));
 
                         if (result.ErrorOccurred)
                         {

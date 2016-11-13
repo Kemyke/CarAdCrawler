@@ -82,20 +82,21 @@ namespace CarAdCrawler
                 {
                     foreach (var model in kvp.Value)
                     {
-                        var newTask = Task.Run(() =>
+                        try
                         {
                             logger.Debug("Searching for new ad started: {0} {1}", kvp.Key, model);
-                            mobileCrawler.CrawlForNewAds(m => m.Name == kvp.Key, m => m.Name == model);
-                        });
+                            var newTask = mobileCrawler.CrawlForNewAds(m => m.Name == kvp.Key, m => m.Name == model);
 
-                        var updateTask = Task.Run(() =>
-                        {
                             logger.Debug("Searching for update started: {0} {1}", kvp.Key, model);
-                            mobileCrawler.CrawlForAdUpdate(m => m.Name == kvp.Key, m => m.Name == model);
-                        });
+                            var updateTask = mobileCrawler.CrawlForAdUpdate(m => m.Name == kvp.Key, m => m.Name == model);
 
-                        tasks.Add(newTask);
-                        tasks.Add(updateTask);
+                            tasks.Add(newTask);
+                            tasks.Add(updateTask);
+                        }
+                        catch(Exception ex)
+                        {
+                            logger.Error("Error during crawl of {0} {1}. Exception: {2}.", kvp.Key, model, ex);
+                        }
                     }
                 }
 
