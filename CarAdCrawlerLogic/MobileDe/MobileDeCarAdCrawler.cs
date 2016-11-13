@@ -182,32 +182,20 @@ namespace CarAdCrawler.MobileDe
                                 client.DefaultRequestHeaders.AcceptCharset.ParseAdd("utf-8");
                                 HtmlDocument doc = new HtmlDocument();
                                 bool notFound = false;
-                                try
+
+                                HttpResponseMessage message = await client.GetAsync(ad.URL);
+                                if (message.StatusCode == HttpStatusCode.NotFound)
                                 {
-                                    string htmlCode = await client.GetStringAsync(ad.URL);
+                                    notFound = true;
+                                }
+                                else
+                                {
+                                    message.EnsureSuccessStatusCode();
+                                    string htmlCode = await message.Content.ReadAsStringAsync();
                                     doc.LoadHtml(htmlCode);
+
                                 }
-                                catch (WebException ex)
-                                {
-                                    var resp = ex.Response as HttpWebResponse;
-                                    if (resp != null)
-                                    {
-                                        if (resp.StatusCode == HttpStatusCode.NotFound)
-                                        {
-                                            notFound = true;
-                                        }
-                                        else
-                                        {
-                                            throw;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        throw;
-                                    }
-                                }
-                                //var error = doc.DocumentNode.Descendants("div").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("errorMessage")).FirstOrDefault();
-                                //if (error == null)
+
                                 if (notFound)
                                 {
                                     //Ad removed
