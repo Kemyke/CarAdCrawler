@@ -232,7 +232,7 @@ namespace CarAdCrawler.MobileDe
                     models = ctx.Models.Where(m => m.ParentId == make.Id).Where(modelFilter).ToList();
                 }
 
-                Parallel.ForEach(models, async (model) =>
+                Parallel.ForEach(models, (model) =>
                 {
                     try
                     {
@@ -249,7 +249,7 @@ namespace CarAdCrawler.MobileDe
 
                         string url = string.Format("http://suchen.mobile.de/auto/search.html?makeModelVariant1.makeId={0}&makeModelVariant1.modelId={1}&isSearchRequest=true&pageNumber=1", make.MakeId, model.ModelId);
                         
-                        var result = await crawler.CrawlAsync(new Uri(url));
+                        var result = crawler.CrawlAsync(new Uri(url)).GetAwaiter().GetResult();
 
                         if (result.ErrorOccurred)
                         {
