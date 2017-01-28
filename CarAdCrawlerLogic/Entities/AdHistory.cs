@@ -48,6 +48,12 @@ namespace CarAdCrawler.Entities
 
         public Ad Ad { get; set; }
 
+        public AdHistory()
+        {
+            Features = new List<AdHistoryFeature>();
+            States = new List<AdHistoryState>();
+        }
+
         public List<PropertyInfo> GetChangedProps(AdHistory @new)
         {
             List<PropertyInfo> changedProps = new List<PropertyInfo>();
