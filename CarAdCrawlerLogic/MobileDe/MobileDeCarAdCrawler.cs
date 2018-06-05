@@ -242,7 +242,7 @@ namespace CarAdCrawler.MobileDe
 
                         Stopwatch sw = new Stopwatch();
                         sw.Start();
-                        PoliteWebCrawler crawler = new PoliteWebCrawler(null, new MobileDeNewAdDecisionMaker(make, model), null, null, null, null, null, null, null);
+                        PoliteWebCrawler crawler = new PoliteWebCrawler(null, new MobileDeNewAdDecisionMaker(make, model), null, null, null, new DataHrefHapHyperLinkParser(), null, null, null);
 
                         crawler.CrawlBag = new { make, model };
                         crawler.PageCrawlCompleted += crawler_ProcessPageCrawlCompleted;
