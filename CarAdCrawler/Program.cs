@@ -108,6 +108,7 @@ namespace CarAdCrawler
             {
                 logger.Debug("Error: {0}", ex.ToString());
             }
+            Console.ReadLine();
         }
 
         private static List<string> GetAllModel(string makeName)
